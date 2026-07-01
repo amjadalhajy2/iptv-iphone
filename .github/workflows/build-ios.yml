@@ -8,12 +8,15 @@ on:
 jobs:
   build-ios:
     runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: ./StreamIPTV 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4 # تم التحديث إلى الإصدار الرابع
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4 # تم التحديث إلى الإصدار الرابع
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
 
@@ -41,7 +44,7 @@ jobs:
           zip -r ../../../../StreamIPTV.ipa Payload
 
       - name: Upload IPA Artifact
-        uses: actions/upload-artifact@v4 # تم التحديث إلى الإصدار الرابع لحل رسالة الخطأ
+        uses: actions/upload-artifact@v4
         with:
           name: StreamIPTV-IPA
           path: StreamIPTV.ipa
