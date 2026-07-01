@@ -34,6 +34,10 @@ jobs:
 - name: Build App without Code Signing (For SideStore)
         run: |
           cd ios
+          
+          # هذا السطر هو الحل: يخبر نظام Xcode بالمسار الدقيق للـ Node.js حتى لا يفشل سكربت التجميع
+          echo "export NODE_BINARY=$(command -v node)" > .xcode.env.local
+          
           set -o pipefail
           xcodebuild -workspace StreamIPTV.xcworkspace -scheme StreamIPTV -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" ENABLE_USER_SCRIPT_SANDBOXING=NO | xcbeautify
                 
