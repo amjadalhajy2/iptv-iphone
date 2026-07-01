@@ -3,17 +3,17 @@ name: Build Unsigned iOS IPA
 on:
   push:
     branches: [ main ]
-  workflow_dispatch: # للسماح بتشغيل البناء يدوياً من واجهة GitHub
+  workflow_dispatch:
 
 jobs:
   build-ios:
     runs-on: macos-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # تم التحديث إلى الإصدار الرابع
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4 # تم التحديث إلى الإصدار الرابع
         with:
           node-version: '18'
 
@@ -31,7 +31,6 @@ jobs:
       - name: Build App without Code Signing (For SideStore)
         run: |
           cd ios
-          # بناء التطبيق لمعمارية هواتف الآيفون وتخطي التوقيع
           xcodebuild -workspace StreamIPTV.xcworkspace -scheme StreamIPTV -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
           
       - name: Package to IPA
@@ -42,7 +41,7 @@ jobs:
           zip -r ../../../../StreamIPTV.ipa Payload
 
       - name: Upload IPA Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4 # تم التحديث إلى الإصدار الرابع لحل رسالة الخطأ
         with:
           name: StreamIPTV-IPA
           path: StreamIPTV.ipa
