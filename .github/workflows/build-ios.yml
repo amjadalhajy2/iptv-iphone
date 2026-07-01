@@ -31,6 +31,9 @@ jobs:
           cd ios
           pod install
 
+- name: Reveal Hidden JavaScript Error
+        run: npx react-native bundle --entry-file node_modules/expo/AppEntry.js --platform ios --dev false --bundle-output main.jsbundle
+
 - name: Build App without Code Signing (For SideStore)
         run: |
           cd ios
