@@ -25,8 +25,8 @@ jobs:
         run: |
           DIR=$(dirname $(find . -name "package.json" | head -n 1))
           echo "dir=$DIR" >> $GITHUB_ENV
-
-- name: Install dependencies and Force missing libraries
+      
+      - name: Install dependencies and Force missing libraries
         run: |
           cd ${{ env.dir }}
           npm install
