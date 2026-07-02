@@ -71,7 +71,7 @@ export default function App() {
         <WebView
           ref={webViewRef}
           // ↙️ ضع هنا رابط صفحة الويب الخاصة بك المرفوعة على GitHub Pages
-          source={{ uri: 'https://your-github-username.github.io/your-web-repo/' }} 
+          source={{ uri: 'https://amjadalhajy2.github.io/iptv-iphone/' }} 
           javaScriptEnabled={true}
           domStorageEnabled={true}
           allowsInlineMediaPlayback={true}
