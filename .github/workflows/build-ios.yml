@@ -32,7 +32,6 @@ jobs:
           npm install
           npm install react-native-webview react-native-vlc-media-player
 
-      # التعديل هنا: مسح مجلد ios و .expo بالكامل لضمان تطبيق إعدادات App.js الجديدة
       - name: Clean and Prebuild iOS Project
         run: |
           cd ${{ env.dir }}
@@ -54,15 +53,24 @@ jobs:
         run: |
           cd ${{ env.dir }}/ios
           
+          # 1. إنشاء ملف القوانين الصارمة لإجبار Xcode وسكربتاته على تخطي الحماية والتوقيع
+          cat << 'EOF' > bypass.xcconfig
+          CODE_SIGNING_ALLOWED=NO
+          CODE_SIGNING_REQUIRED=NO
+          CODE_SIGN_IDENTITY=
+          EXPANDED_CODE_SIGN_IDENTITY=
+          ENTITLEMENTS_REQUIRED=NO
+          ENABLE_USER_SCRIPT_SANDBOXING=NO
+          EOF
+          
+          # 2. تعميم الملف على بيئة البناء بالكامل
+          export XCODE_XCCONFIG_FILE="$(pwd)/bypass.xcconfig"
+          
           export NODE_BINARY=$(command -v node)
           echo "export NODE_BINARY=$(command -v node)" > .xcode.env.local
           
-          export CODE_SIGNING_ALLOWED=NO
-          export CODE_SIGNING_REQUIRED=NO
-          export CODE_SIGN_IDENTITY=""
-          export ENABLE_USER_SCRIPT_SANDBOXING=NO
-          
-          xcodebuild -workspace StreamIPTV.xcworkspace -scheme StreamIPTV -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" ENABLE_USER_SCRIPT_SANDBOXING=NO
+          # 3. تشغيل البناء مع ربطه بملف القوانين الإجباري
+          xcodebuild -workspace StreamIPTV.xcworkspace -scheme StreamIPTV -configuration Release -sdk iphoneos -derivedDataPath build -xcconfig bypass.xcconfig
           
       - name: Package to IPA
         run: |
