@@ -1,91 +1,106 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { StyleSheet, View, BackHandler, TouchableOpacity, Text, SafeAreaView, StatusBar } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { StyleSheet, View, SafeAreaView, StatusBar, TouchableOpacity, Text } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { VLCPlayer } from 'react-native-vlc-media-player';
+import { createClient } from '@supabase/supabase-js';
 
-// ضع رابط صفحة الويب المرفوعة على GitHub Pages أو Netlify هنا
-const WEB_URL = 'https://your-website-url.com'; 
+// 1. إعداد الاتصال بـ Supabase من جانب التطبيق المدمج للمزامنة أثناء تشغيل الفيديو
+const SUPABASE_URL = 'https://kpfymvtyqbyjmlqfgujo.supabase.co'; // استبدله برابط مشروعك
+const SUPABASE_ANON_KEY = 'sb_publishable_g7dHfpmPHcQwAWsO9FFuGw_4lG8fyLc'; // استبدله بمفتاح مشروعك
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export default function App() {
+  const [videoUrl, setVideoUrl] = useState(null);
+  const [videoId, setVideoId] = useState(null);
+  const [userId, setUserId] = useState(null);
   const webViewRef = useRef(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [videoUrl, setVideoUrl] = useState('');
-  const [resumeTime, setResumeTime] = useState(0);
 
-  // استقبال أوامر التشغيل من صفحة الويب
-  const handleMessage = (event) => {
+  // 2. الاستماع للرسائل القادمة من صفحة الويب المرفوعة على جيت هب
+  const handleMessageFromWeb = async (event) => {
     try {
-      const data = JSON.parse(event.nativeEvent.data);
-      if (data.action === 'play') {
-        setVideoUrl(data.url);
-        setResumeTime(data.resumeTime || 0);
-        setIsPlaying(true);
+      const message = JSON.parse(event.nativeEvent.data);
+      
+      // إذا أرسل الموقع أمر تشغيل فيديو
+      if (message.type === 'PLAY_VIDEO') {
+        setVideoUrl(message.url);
+        setVideoId(message.videoId);
+        setUserId(message.userId); // معرف المستخدم لربط المزامنة بحسابه
       }
-    } catch (e) {
-      console.log('Error parsing message: ', e);
+    } catch (error) {
+      console.error("خطأ في قراءة البيانات القادمة من الموقع:", error);
     }
   };
 
-  // إرسال وقت المشاهدة إلى الواجهة لحفظه في قاعدة البيانات
-  const handleVideoProgress = (event) => {
-    if (event.currentTime > 0 && Math.floor(event.currentTime / 1000) % 15 === 0) {
-      const seconds = Math.floor(event.currentTime / 1000);
-      webViewRef.current?.injectJavaScript(`window.updateProgressFromNative(${seconds}); true;`);
+  // 3. دالة المزامنة المستمرة مع Supabase أثناء تشغيل الفيديو (تحديث التقدم)
+  const syncProgressWithSupabase = async (playbackData) => {
+    if (!videoId || !userId) return;
+
+    // حساب الوقت الحالي بالثواني
+    const currentTimeInSeconds = Math.floor(playbackData.currentTime / 1000);
+    const totalDurationInSeconds = Math.floor(playbackData.duration / 1000);
+
+    if (currentTimeInSeconds <= 0) return;
+
+    // إرسال التقدم إلى جدول المتابعة في Supabase (تحديث أو إنشاء)
+    const { error } = await supabase
+      .from('watch_history') // تأكد من إنشاء جدول بهذا الاسم في سوبابيس
+      .upsert({ 
+        user_id: userId, 
+        video_id: videoId, 
+        last_position: currentTimeInSeconds, 
+        total_duration: totalDurationInSeconds,
+        updated_at: new Date()
+      }, { onConflict: 'user_id,video_id' });
+
+    if (error) {
+      console.error("فشلت المزامنة مع سوبابيس:", error.message);
     }
   };
 
-  const closePlayer = () => {
-    setIsPlaying(false);
-    setVideoUrl('');
+  const handleClosePlayer = () => {
+    setVideoUrl(null);
+    setVideoId(null);
   };
-
-  const handleVideoEnd = () => {
-    closePlayer();
-    webViewRef.current?.injectJavaScript(`window.onVideoEnded(); true;`);
-  };
-
-  // التعامل مع زر الرجوع الفعلي
-  useEffect(() => {
-    const backAction = () => {
-      if (isPlaying) {
-        closePlayer();
-        return true;
-      }
-      return false;
-    };
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
-    return () => backHandler.remove();
-  }, [isPlaying]);
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar hidden={true} />
+      <StatusBar barStyle="light-content" backgroundColor="#121212" />
       
-      {!isPlaying && (
+      {/* العرض الشرطي: إذا لم يكن هناك فيديو يعمل، اعرض واجهة الويب من جيت هب */}
+      {!videoUrl ? (
         <WebView
           ref={webViewRef}
-          source={{ uri: WEB_URL }}
-          style={styles.webview}
-          onMessage={handleMessage}
+          // ↙️ ضع هنا رابط صفحة الويب الخاصة بك المرفوعة على GitHub Pages
+          source={{ uri: 'https://your-github-username.github.io/your-web-repo/' }} 
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
           allowsInlineMediaPlayback={true}
-          scrollEnabled={false}
-          bounces={false}
+          onMessage={handleMessageFromWeb} // ربط الجسر لاستقبال الأوامر
+          style={styles.webview}
         />
-      )}
-
-      {isPlaying && (
+      ) : (
+        /* إذا أرسل الموقع رابط فيديو، اخفِ الويب وافتح مشغل VLC الأصلي لدعم MKV */
         <View style={styles.playerContainer}>
           <VLCPlayer
-            style={styles.video}
+            style={styles.videoPlayer}
             videoAspectRatio="16:9"
             source={{ uri: videoUrl }}
-            onProgress={handleVideoProgress}
-            onEnd={handleVideoEnd}
-            autoAspectRatio={true}
-            resume={resumeTime}
+            autoplay={true}
+            resizeMode="contain"
+            onProgress={(e) => {
+              // هذا الحدث يعمل تلقائياً كل ثانية أثناء تشغيل الفيديو ليقوم بالمزامنة
+              syncProgressWithSupabase(e);
+            }}
+            onEnd={handleClosePlayer}
+            onError={(e) => {
+              console.error("خطأ في مشغل VLC:", e);
+              handleClosePlayer();
+            }}
           />
-          <TouchableOpacity style={styles.closeButton} onPress={closePlayer}>
-            <Text style={styles.closeButtonText}>إغلاق ✕</Text>
+          
+          {/* زر عائم لإغلاق المشغل والعودة لواجهة الويب */}
+          <TouchableOpacity style={styles.closeButton} onPress={handleClosePlayer}>
+            <Text style={styles.closeButtonText}>✕ إغلاق الفيديو</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -94,13 +109,37 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  webview: { flex: 1, backgroundColor: '#000' },
-  playerContainer: { flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' },
-  video: { width: '100%', height: '100%' },
-  closeButton: {
-    position: 'absolute', top: 30, right: 30, backgroundColor: 'rgba(229, 9, 20, 0.8)',
-    paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8, borderWidth: 1, borderColor: '#fff'
+  container: {
+    flex: 1,
+    backgroundColor: '#121212',
   },
-  closeButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 }
+  webview: {
+    flex: 1,
+  },
+  playerContainer: {
+    flex: 1,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  videoPlayer: {
+    width: '100%',
+    height: '100%',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderBottomColor: '#333',
+  },
+  closeButtonText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
 });
