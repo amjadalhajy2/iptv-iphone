@@ -8,6 +8,12 @@ on:
 jobs:
   build-ios:
     runs-on: macos-latest
+    
+    # السر هنا: إخبار السيرفر بتنفيذ جميع الأوامر داخل مجلد المشروع
+    defaults:
+      run:
+        working-directory: ./StreamIPTV
+        
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -17,7 +23,6 @@ jobs:
         with:
           node-version: '18'
 
-      # حل مشكلة عدم تعرف Xcode على Node.js بوضعه في المسار الأساسي
       - name: Force Node into System Path
         run: sudo ln -s $(which node) /usr/local/bin/node || true
 
@@ -32,7 +37,6 @@ jobs:
           cd ios
           pod install
 
-      # أزلنا xcbeautify لكي نرى الخطأ الحقيقي إذا فشل التجميع
       - name: Build App (Raw Output)
         run: |
           cd ios
@@ -44,10 +48,11 @@ jobs:
           cd ios/build/Build/Products/Release-iphoneos
           mkdir Payload
           mv StreamIPTV.app Payload/
-          zip -r ../../../../StreamIPTV.ipa Payload
+          zip -r StreamIPTV.ipa Payload
 
+      # رفع الملف النهائي (يجب أن يكون المسار من الجذر)
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
           name: StreamIPTV-IPA
-          path: StreamIPTV.ipa
+          path: StreamIPTV/ios/build/Build/Products/Release-iphoneos/StreamIPTV.ipa
