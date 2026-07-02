@@ -32,9 +32,11 @@ jobs:
           npm install
           npm install react-native-webview react-native-vlc-media-player
 
-      - name: Prebuild iOS Project
+      # التعديل هنا: مسح مجلد ios و .expo بالكامل لضمان تطبيق إعدادات App.js الجديدة
+      - name: Clean and Prebuild iOS Project
         run: |
           cd ${{ env.dir }}
+          rm -rf ios
           rm -rf .expo
           npx expo prebuild --platform ios --clean
 
@@ -55,16 +57,12 @@ jobs:
           export NODE_BINARY=$(command -v node)
           echo "export NODE_BINARY=$(command -v node)" > .xcode.env.local
           
-          # ==========================================
-          # الحل الجذري: تعميم تخطي التوقيع لجميع العمليات الخفية
-          # ==========================================
           export CODE_SIGNING_ALLOWED=NO
           export CODE_SIGNING_REQUIRED=NO
           export CODE_SIGN_IDENTITY=""
           export ENABLE_USER_SCRIPT_SANDBOXING=NO
           
-          # إضافة أمر لطباعة الأخطاء الداخلية المخفية في حال الفشل لا سمح الله
-          xcodebuild -workspace StreamIPTV.xcworkspace -scheme StreamIPTV -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" ENABLE_USER_SCRIPT_SANDBOXING=NO || (echo "🔴 فشل البناء! جاري البحث عن السجلات الداخلية..." && find /tmp -name "expo-modules-jsi*.log" -exec cat {} \; && exit 1)
+          xcodebuild -workspace StreamIPTV.xcworkspace -scheme StreamIPTV -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" ENABLE_USER_SCRIPT_SANDBOXING=NO
           
       - name: Package to IPA
         run: |
