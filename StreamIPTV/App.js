@@ -1,4 +1,4 @@
-import 'react-native-url-polyfill/auto'; // ضروري جداً لعمل سوبابيس داخل التطبيق
+import 'react-native-url-polyfill/auto';
 import React, { useState, useRef } from 'react';
 import { StyleSheet, View, SafeAreaView, StatusBar, TouchableOpacity, Text } from 'react-native';
 import { WebView } from 'react-native-webview';
@@ -6,10 +6,9 @@ import { VLCPlayer } from 'react-native-vlc-media-player';
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = 'https://kpfymvtyqbyjmlqfgujo.supabase.co'; 
-const SUPABASE_ANON_KEY = 'sb_publishable_g7dHfpmPHcQwAWsO9FFuGw_4lG8fyLc'; // ضع مفتاح سوبابيس الخاص بك هنا
+const SUPABASE_ANON_KEY = 'sb_publishable_g7dHfpmPHcQwAWsO9FFuGw_4lG8fyLc';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// 💡 هذا الكود السحري سيتم حقنه في صفحة الويب لكسر حماية الـ CORS واعتراض اتصالات IPTV
 const injectedJS = `
   window.pendingFetches = {};
   
@@ -30,7 +29,6 @@ const injectedJS = `
   const originalFetch = window.fetch;
   window.fetch = async (...args) => {
     const url = args[0];
-    // إذا كان الاتصال يخص سيرفر IPTV، دعه يمر عبر تطبيق الآيفون لتخطي الحظر
     if (typeof url === 'string' && url.includes('player_api.php')) {
       return new Promise((resolve, reject) => {
         const reqId = Math.random().toString(36).substring(7);
@@ -43,7 +41,6 @@ const injectedJS = `
         }));
       });
     }
-    // بقية الاتصالات (مثل سوبابيس) تمر بشكل طبيعي
     return originalFetch(...args);
   };
   true;
@@ -59,22 +56,22 @@ export default function App() {
     try {
       const message = JSON.parse(event.nativeEvent.data);
       
-      // 1. أمر تشغيل الفيديو الأصلي (MKV)
       if (message.type === 'PLAY_VIDEO') {
         setVideoUrl(message.url);
         setVideoId(message.videoId);
         setUserId(message.userId);
       }
       
-      // 2. أمر جلب البيانات من سيرفر الـ IPTV لتخطي حظر المتصفح
       if (message.type === 'PROXY_FETCH') {
         try {
           const response = await fetch(message.url);
           const json = await response.json();
-          const script = \`window.handleProxyResponse('\${message.reqId}', \${JSON.stringify(json)}, null); true;\`;
+          // تم إصلاح الأقواس هنا:
+          const script = `window.handleProxyResponse('${message.reqId}', ${JSON.stringify(json)}, null); true;`;
           webViewRef.current.injectJavaScript(script);
         } catch (err) {
-          const script = \`window.handleProxyResponse('\${message.reqId}', null, '\${err.message}'); true;\`;
+          // وتم إصلاح الأقواس هنا:
+          const script = `window.handleProxyResponse('${message.reqId}', null, '${err.message}'); true;`;
           webViewRef.current.injectJavaScript(script);
         }
       }
@@ -107,11 +104,11 @@ export default function App() {
       {!videoUrl ? (
         <WebView
           ref={webViewRef}
-          source={{ uri: 'https://amjadalhajy2.github.io/iptv-iphone/' }} // ⬅️ ضع رابط صفحتك هنا
+          source={{ uri: 'https://amjadalhajy2.github.io/iptv-iphone/' }} // ⬅️ ضع رابط صفحتك الحقيقي هنا
           javaScriptEnabled={true}
           domStorageEnabled={true}
           allowsInlineMediaPlayback={true}
-          originWhitelist={['*']} // ⬅️ مهم جداً للسماح بالاتصالات الخارجية
+          originWhitelist={['*']} 
           injectedJavaScript={injectedJS}
           onMessage={handleMessageFromWeb}
           style={styles.webview}
