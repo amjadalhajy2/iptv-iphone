@@ -8,9 +8,6 @@ on:
 jobs:
   build-ios:
     runs-on: macos-latest
-    defaults:
-      run:
-        working-directory: ./StreamIPTV 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -19,6 +16,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
+
+      # حل مشكلة عدم تعرف Xcode على Node.js بوضعه في المسار الأساسي
+      - name: Force Node into System Path
+        run: sudo ln -s $(which node) /usr/local/bin/node || true
 
       - name: Install dependencies
         run: npm install
@@ -31,19 +32,13 @@ jobs:
           cd ios
           pod install
 
-- name: Reveal Hidden JavaScript Error
-        run: npx react-native bundle --entry-file node_modules/expo/AppEntry.js --platform ios --dev false --bundle-output main.jsbundle
-
-- name: Build App without Code Signing (For SideStore)
+      # أزلنا xcbeautify لكي نرى الخطأ الحقيقي إذا فشل التجميع
+      - name: Build App (Raw Output)
         run: |
           cd ios
+          export NODE_BINARY=$(command -v node)
+          xcodebuild -workspace StreamIPTV.xcworkspace -scheme StreamIPTV -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" ENABLE_USER_SCRIPT_SANDBOXING=NO
           
-          # هذا السطر هو الحل: يخبر نظام Xcode بالمسار الدقيق للـ Node.js حتى لا يفشل سكربت التجميع
-          echo "export NODE_BINARY=$(command -v node)" > .xcode.env.local
-          
-          set -o pipefail
-          xcodebuild -workspace StreamIPTV.xcworkspace -scheme StreamIPTV -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" ENABLE_USER_SCRIPT_SANDBOXING=NO | xcbeautify
-                
       - name: Package to IPA
         run: |
           cd ios/build/Build/Products/Release-iphoneos
