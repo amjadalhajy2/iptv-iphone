@@ -87,19 +87,18 @@ export default function App() {
           
           try {
             JSON.parse(text);
-            // 🔥 الحماية المتقدمة: استبدال علامات الاقتباس لمنع الانهيار
             const safeData = encodeURIComponent(text).replace(/'/g, "%27");
-            const script = \`window.handleProxyResponse('\${message.reqId}', '\${safeData}', null); true;\`;
+            const script = `window.handleProxyResponse('${message.reqId}', '${safeData}', null); true;`;
             webViewRef.current.injectJavaScript(script);
           } catch(parseError) {
             const safeError = encodeURIComponent('الرابط لا يحتوي على بيانات IPTV صحيحة').replace(/'/g, "%27");
-            const script = \`window.handleProxyResponse('\${message.reqId}', null, '\${safeError}'); true;\`;
+            const script = `window.handleProxyResponse('${message.reqId}', null, '${safeError}'); true;`;
             webViewRef.current.injectJavaScript(script);
           }
 
         } catch (err) {
           const safeError = encodeURIComponent(err.message || 'فشل الاتصال بالسيرفر').replace(/'/g, "%27");
-          const script = \`window.handleProxyResponse('\${message.reqId}', null, '\${safeError}'); true;\`;
+          const script = `window.handleProxyResponse('${message.reqId}', null, '${safeError}'); true;`;
           webViewRef.current.injectJavaScript(script);
         }
       }
