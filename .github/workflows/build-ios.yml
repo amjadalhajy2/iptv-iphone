@@ -30,7 +30,7 @@ jobs:
         run: |
           cd ${{ env.dir }}
           npm install
-          npm install react-native-webview react-native-vlc-media-player @supabase/supabase-js react-native-url-polyfill
+          npm install react-native-webview react-native-vlc-media-player @supabase/supabase-js react-native-url-polyfill expo-build-properties
 
       - name: Clean and Prebuild iOS Project
         run: |
