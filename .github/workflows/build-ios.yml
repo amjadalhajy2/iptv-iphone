@@ -8,12 +8,6 @@ on:
 jobs:
   build-ios:
     runs-on: macos-latest
-    
-    # السر هنا: إخبار السيرفر بتنفيذ جميع الأوامر داخل مجلد المشروع
-    defaults:
-      run:
-        working-directory: ./StreamIPTV
-        
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -26,35 +20,47 @@ jobs:
       - name: Force Node into System Path
         run: sudo ln -s $(which node) /usr/local/bin/node || true
 
+      # هذه الخطوة الذكية تبحث عن المجلد الصحيح وتجهزه للخطوات القادمة
+      - name: Find Project Directory
+        id: find_dir
+        run: |
+          DIR=$(dirname $(find . -name "package.json" | head -n 1))
+          echo "Found package.json in: $DIR"
+          echo "dir=$DIR" >> $GITHUB_ENV
+
       - name: Install dependencies
-        run: npm install
+        run: |
+          cd ${{ env.dir }}
+          npm install
 
       - name: Prebuild iOS Project
-        run: npx expo prebuild --platform ios
+        run: |
+          cd ${{ env.dir }}
+          npx expo prebuild --platform ios
 
       - name: Install CocoaPods
         run: |
-          cd ios
+          cd ${{ env.dir }}/ios
           pod install
 
-- name: Build App (Raw Output)
+      - name: Build App
         run: |
-          cd ios
-          # إنشاء ملف الإعدادات الداخلي لـ Xcode ليتعرف على مسار Node.js
+          cd ${{ env.dir }}/ios
+          # إجبار Xcode على التعرف على مسار Node.js لحل مشكلة التجميع
+          export NODE_BINARY=$(command -v node)
           echo "export NODE_BINARY=$(command -v node)" > .xcode.env.local
           
           xcodebuild -workspace StreamIPTV.xcworkspace -scheme StreamIPTV -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" ENABLE_USER_SCRIPT_SANDBOXING=NO
           
       - name: Package to IPA
         run: |
-          cd ios/build/Build/Products/Release-iphoneos
-          mkdir Payload
-          mv StreamIPTV.app Payload/
-          zip -r StreamIPTV.ipa Payload
+          cd ${{ env.dir }}/ios/build/Build/Products/Release-iphoneos
+          mkdir -p Payload
+          mv *.app Payload/
+          zip -r ../../../../StreamIPTV.ipa Payload
 
-      # رفع الملف النهائي (يجب أن يكون المسار من الجذر)
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
           name: StreamIPTV-IPA
-          path: StreamIPTV/ios/build/Build/Products/Release-iphoneos/StreamIPTV.ipa
+          path: '**/*.ipa'
