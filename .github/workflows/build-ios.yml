@@ -37,10 +37,12 @@ jobs:
           cd ios
           pod install
 
-      - name: Build App (Raw Output)
+- name: Build App (Raw Output)
         run: |
           cd ios
-          export NODE_BINARY=$(command -v node)
+          # إنشاء ملف الإعدادات الداخلي لـ Xcode ليتعرف على مسار Node.js
+          echo "export NODE_BINARY=$(command -v node)" > .xcode.env.local
+          
           xcodebuild -workspace StreamIPTV.xcworkspace -scheme StreamIPTV -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" ENABLE_USER_SCRIPT_SANDBOXING=NO
           
       - name: Package to IPA
