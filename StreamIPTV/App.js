@@ -12,15 +12,20 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const injectedJS = `
   window.pendingFetches = {};
   
-  window.handleProxyResponse = function(reqId, data, error) {
+  window.handleProxyResponse = function(reqId, dataStr, errorStr) {
     if (window.pendingFetches[reqId]) {
-      if (error) {
-        window.pendingFetches[reqId].reject(new Error(error));
+      if (errorStr) {
+        window.pendingFetches[reqId].reject(new Error(decodeURIComponent(errorStr)));
       } else {
-        window.pendingFetches[reqId].resolve({
-          ok: true,
-          json: () => Promise.resolve(data)
-        });
+        try {
+          const parsedData = JSON.parse(decodeURIComponent(dataStr));
+          window.pendingFetches[reqId].resolve({
+            ok: true,
+            json: () => Promise.resolve(parsedData)
+          });
+        } catch(e) {
+          window.pendingFetches[reqId].reject(new Error('Invalid JSON response'));
+        }
       }
       delete window.pendingFetches[reqId];
     }
@@ -34,6 +39,14 @@ const injectedJS = `
         const reqId = Math.random().toString(36).substring(7);
         window.pendingFetches[reqId] = { resolve, reject };
         
+        // 🔥 حماية من التعليق: إذا لم يرد السيرفر خلال 15 ثانية، يظهر تنبيه بالفشل بدلاً من التعليق
+        setTimeout(() => {
+          if (window.pendingFetches[reqId]) {
+            window.pendingFetches[reqId].reject(new Error('انتهى وقت الطلب (تأكد من الرابط)'));
+            delete window.pendingFetches[reqId];
+          }
+        }, 15000);
+
         window.ReactNativeWebView.postMessage(JSON.stringify({
           type: 'PROXY_FETCH',
           url: url,
@@ -64,14 +77,31 @@ export default function App() {
       
       if (message.type === 'PROXY_FETCH') {
         try {
-          const response = await fetch(message.url);
-          const json = await response.json();
-          // تم إصلاح الأقواس هنا:
-          const script = `window.handleProxyResponse('${message.reqId}', ${JSON.stringify(json)}, null); true;`;
-          webViewRef.current.injectJavaScript(script);
+          // 🔥 إضافة User-Agent وهمي بصيغة متصفح كروم على ويندوز لخداع سيرفرات IPTV
+          const response = await fetch(message.url, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+              'Accept': 'application/json, text/plain, */*'
+            }
+          });
+          
+          const text = await response.text();
+          
+          // 🔥 تشفير البيانات (encode) لضمان عدم انهيار الجسر بسبب رموز السيرفر الغريبة
+          try {
+            JSON.parse(text);
+            const safeData = encodeURIComponent(text);
+            const script = \`window.handleProxyResponse('\${message.reqId}', '\${safeData}', null); true;\`;
+            webViewRef.current.injectJavaScript(script);
+          } catch(parseError) {
+            const safeError = encodeURIComponent('الرابط لا يحتوي على بيانات IPTV صحيحة');
+            const script = \`window.handleProxyResponse('\${message.reqId}', null, '\${safeError}'); true;\`;
+            webViewRef.current.injectJavaScript(script);
+          }
+
         } catch (err) {
-          // وتم إصلاح الأقواس هنا:
-          const script = `window.handleProxyResponse('${message.reqId}', null, '${err.message}'); true;`;
+          const safeError = encodeURIComponent(err.message || 'فشل الاتصال بالسيرفر');
+          const script = \`window.handleProxyResponse('\${message.reqId}', null, '\${safeError}'); true;\`;
           webViewRef.current.injectJavaScript(script);
         }
       }
@@ -104,12 +134,12 @@ export default function App() {
       {!videoUrl ? (
         <WebView
           ref={webViewRef}
-          source={{ uri: 'https://amjadalhajy2.github.io/iptv-iphone/' }} // ⬅️ ضع رابط صفحتك الحقيقي هنا
+          source={{ uri: 'https://amjadalhajy2.github.io/iptv-iphone/' }} // ⬅️ لا تنس وضع رابط صفحتك هنا
           javaScriptEnabled={true}
           domStorageEnabled={true}
           allowsInlineMediaPlayback={true}
           originWhitelist={['*']} 
-          injectedJavaScript={injectedJS}
+          injectedJavaScriptBeforeContentLoaded={injectedJS} // 🔥 هذا الخيار يضمن زرع البروكسي قبل أن تقلع صفحتك
           onMessage={handleMessageFromWeb}
           style={styles.webview}
         />
