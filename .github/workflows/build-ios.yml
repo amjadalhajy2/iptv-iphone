@@ -26,11 +26,11 @@ jobs:
           DIR=$(dirname $(find . -name "package.json" | head -n 1))
           echo "dir=$DIR" >> $GITHUB_ENV
 
-      - name: Install dependencies and Force missing libraries
+- name: Install dependencies and Force missing libraries
         run: |
           cd ${{ env.dir }}
           npm install
-          npm install react-native-webview react-native-vlc-media-player
+          npm install react-native-webview react-native-vlc-media-player @supabase/supabase-js react-native-url-polyfill
 
       - name: Clean and Prebuild iOS Project
         run: |
