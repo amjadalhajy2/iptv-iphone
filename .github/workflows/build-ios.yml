@@ -12,41 +12,48 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 1. تحديث Node.js إلى الإصدار 20 (الإصدارات الحديثة من Expo تتطلبه)
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Force Node into System Path
         run: sudo ln -s $(which node) /usr/local/bin/node || true
 
-      # هذه الخطوة الذكية تبحث عن المجلد الصحيح وتجهزه للخطوات القادمة
       - name: Find Project Directory
         id: find_dir
         run: |
           DIR=$(dirname $(find . -name "package.json" | head -n 1))
-          echo "Found package.json in: $DIR"
           echo "dir=$DIR" >> $GITHUB_ENV
 
-      - name: Install dependencies
+      # 2. تثبيت إجباري للمكتبات لتفادي خطأ (Module not found)
+      - name: Install dependencies and Force missing libraries
         run: |
           cd ${{ env.dir }}
           npm install
+          npm install react-native-webview react-native-vlc-media-player
 
       - name: Prebuild iOS Project
         run: |
           cd ${{ env.dir }}
-          npx expo prebuild --platform ios
+          rm -rf .expo
+          npx expo prebuild --platform ios --clean
 
       - name: Install CocoaPods
         run: |
           cd ${{ env.dir }}/ios
           pod install
 
+      # 3. اختبار تجميع الجافاسكريبت لكشف أي أخطاء في كود App.js بوضوح
+      - name: Test JS Bundling (Reveal hidden errors)
+        run: |
+          cd ${{ env.dir }}
+          npx expo export --platform ios
+
       - name: Build App
         run: |
           cd ${{ env.dir }}/ios
-          # إجبار Xcode على التعرف على مسار Node.js لحل مشكلة التجميع
           export NODE_BINARY=$(command -v node)
           echo "export NODE_BINARY=$(command -v node)" > .xcode.env.local
           
