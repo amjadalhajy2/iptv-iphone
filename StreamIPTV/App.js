@@ -39,7 +39,6 @@ const injectedJS = `
         const reqId = Math.random().toString(36).substring(7);
         window.pendingFetches[reqId] = { resolve, reject };
         
-        // 🔥 حماية من التعليق: إذا لم يرد السيرفر خلال 15 ثانية، يظهر تنبيه بالفشل بدلاً من التعليق
         setTimeout(() => {
           if (window.pendingFetches[reqId]) {
             window.pendingFetches[reqId].reject(new Error('انتهى وقت الطلب (تأكد من الرابط)'));
@@ -77,7 +76,6 @@ export default function App() {
       
       if (message.type === 'PROXY_FETCH') {
         try {
-          // 🔥 إضافة User-Agent وهمي بصيغة متصفح كروم على ويندوز لخداع سيرفرات IPTV
           const response = await fetch(message.url, {
             headers: {
               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -87,20 +85,20 @@ export default function App() {
           
           const text = await response.text();
           
-          // 🔥 تشفير البيانات (encode) لضمان عدم انهيار الجسر بسبب رموز السيرفر الغريبة
           try {
             JSON.parse(text);
-            const safeData = encodeURIComponent(text);
+            // 🔥 الحماية المتقدمة: استبدال علامات الاقتباس لمنع الانهيار
+            const safeData = encodeURIComponent(text).replace(/'/g, "%27");
             const script = \`window.handleProxyResponse('\${message.reqId}', '\${safeData}', null); true;\`;
             webViewRef.current.injectJavaScript(script);
           } catch(parseError) {
-            const safeError = encodeURIComponent('الرابط لا يحتوي على بيانات IPTV صحيحة');
+            const safeError = encodeURIComponent('الرابط لا يحتوي على بيانات IPTV صحيحة').replace(/'/g, "%27");
             const script = \`window.handleProxyResponse('\${message.reqId}', null, '\${safeError}'); true;\`;
             webViewRef.current.injectJavaScript(script);
           }
 
         } catch (err) {
-          const safeError = encodeURIComponent(err.message || 'فشل الاتصال بالسيرفر');
+          const safeError = encodeURIComponent(err.message || 'فشل الاتصال بالسيرفر').replace(/'/g, "%27");
           const script = \`window.handleProxyResponse('\${message.reqId}', null, '\${safeError}'); true;\`;
           webViewRef.current.injectJavaScript(script);
         }
@@ -134,12 +132,12 @@ export default function App() {
       {!videoUrl ? (
         <WebView
           ref={webViewRef}
-          source={{ uri: 'https://amjadalhajy2.github.io/iptv-iphone/' }} // ⬅️ لا تنس وضع رابط صفحتك هنا
+          source={{ uri: 'https://amjadalhajy2.github.io/iptv-iphone/' }} // ⬅️ تذكر وضع رابط صفحتك هنا
           javaScriptEnabled={true}
           domStorageEnabled={true}
           allowsInlineMediaPlayback={true}
           originWhitelist={['*']} 
-          injectedJavaScriptBeforeContentLoaded={injectedJS} // 🔥 هذا الخيار يضمن زرع البروكسي قبل أن تقلع صفحتك
+          injectedJavaScriptBeforeContentLoaded={injectedJS}
           onMessage={handleMessageFromWeb}
           style={styles.webview}
         />
