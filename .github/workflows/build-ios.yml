@@ -33,20 +33,44 @@ jobs:
           npx expo install react-native-webview
           npm install react-native-vlc-media-player @supabase/supabase-js react-native-url-polyfill react-native-blob-util
 
+      # 🔥 الاختراق الجذري: إنشاء قابس Expo مخصص لكسر الـ ATS وتعديل app.json لاستخدامه
+      - name: Create Custom ATS Bypass Plugin
+        run: |
+          cd ${{ env.dir }}
+          # 1. إنشاء ملف القابس السحري
+          cat << 'EOF' > withATSBypass.js
+          const { withInfoPlist } = require('@expo/config-plugins');
+          module.exports = function withATSBypass(config) {
+            return withInfoPlist(config, (config) => {
+              config.modResults.NSAppTransportSecurity = {
+                NSAllowsArbitraryLoads: true,
+                NSAllowsArbitraryLoadsInWebContent: true,
+                NSAllowsLocalNetworking: true
+              };
+              return config;
+            });
+          };
+          EOF
+          
+          # 2. تعديل app.json لاستخدام هذا القابس رسمياً
+          node -e "
+            const fs = require('fs');
+            const app = JSON.parse(fs.readFileSync('app.json', 'utf8'));
+            app.expo = app.expo || {};
+            app.expo.plugins = app.expo.plugins || [];
+            // إزالة أي إضافة سابقة تسبب التعارض
+            app.expo.plugins = app.expo.plugins.filter(p => p !== 'expo-build-properties' && (!Array.isArray(p) || p[0] !== 'expo-build-properties'));
+            // دمج القابس الجديد الذي صنعناه
+            app.expo.plugins.push('./withATSBypass.js');
+            fs.writeFileSync('app.json', JSON.stringify(app, null, 2));
+            console.log('✅ تم تركيب القابس في app.json');
+          "
+
       - name: Clean and Prebuild
         run: |
           cd ${{ env.dir }}
           rm -rf ios .expo
           npx expo prebuild --platform ios --clean
-
-      # 🔥 الاختراق الآمن 100% باستخدام PlistBuddy للحصول على صلاحيات HTTP إجبارياً
-      - name: Force ATS Bypass natively
-        run: |
-          cd ${{ env.dir }}
-          PLIST_PATH=$(find ios -name "Info.plist" -not -path "*/Pods/*" | head -n 1)
-          echo "Patching $PLIST_PATH"
-          /usr/libexec/PlistBuddy -c "Set :NSAppTransportSecurity:NSAllowsArbitraryLoads true" "$PLIST_PATH" || \
-          /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity:NSAllowsArbitraryLoads bool true" "$PLIST_PATH"
 
       - name: Inject Podfile Bypass (Ruby)
         run: |
