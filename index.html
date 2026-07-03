@@ -38,15 +38,12 @@
         .category-chip { background: rgba(255,255,255,0.1); color: white; padding: 1.5vh 4vw; border-radius: 30px; font-size: 3.5vw; font-weight: bold; white-space: nowrap; border: none; }
         .category-chip.active { background: var(--primary); }
         
-        /* الشبكة والشاشات */
         .grid-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3vw; padding: 2vh 4vw; margin-bottom: 5vh; }
         .grid-container.favorites-grid { grid-template-columns: repeat(3, 1fr); }
-        /* شبكة خاصة بالبث المباشر تكون ثنائية وملائمة للشاشة */
         .grid-container.live-grid { grid-template-columns: repeat(2, 1fr); gap: 4vw; } 
         
         .row-inner { display: flex; gap: 3vw; overflow-x: auto; padding: 1vh 4vw; scroll-behavior: smooth; }
         
-        /* تأثير القلب (Flip Card) */
         .card-container { perspective: 1000px; border-radius: 2vw; position: relative; width: 100%; aspect-ratio: 2 / 3; background: transparent; }
         .row-inner .card-container { width: 28vw; flex: 0 0 auto; }
         .card { width: 100%; height: 100%; position: relative; transition: transform 0.6s; transform-style: preserve-3d; border-radius: 2vw; box-shadow: 0 4px 8px rgba(0,0,0,0.5); border: none; }
@@ -56,15 +53,13 @@
         .card-back { transform: rotateY(180deg); background: rgba(20,20,20,0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2vw; text-align: center; border: 1px solid var(--primary); }
         .card-back-text { color: white; font-size: 3vw; line-height: 1.8; font-weight: bold; }
         
-        /* أزرار متابعة المشاهدة بشفافية ومثلث كبير */
         .resume-overlay { position: absolute; top:0; left:0; width:100%; height:100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.4); z-index: 10; gap: 2vh; }
         .resume-play-btn { background: transparent; color: white; width: 14vw; height: 14vw; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 0.5vw solid white; box-shadow: 0 0 15px rgba(0,0,0,0.8); }
-        .resume-play-btn svg { width: 8vw; height: 8vw; margin-left: 1vw; } /* مثلث كبير */
+        .resume-play-btn svg { width: 8vw; height: 8vw; margin-left: 1vw; } 
         .resume-info-btn { background: rgba(0,0,0,0.7); color: white; width: 9vw; height: 9vw; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 0.3vw solid white; font-size: 6vw; font-weight: bold; font-family: sans-serif; }
 
-        /* تعديلات البث المباشر */
         .live-card { width: 100%; text-align: center; background: none; border: none; }
-        .row-inner .live-card { width: 42vw; flex: 0 0 auto; } /* أوسع في التمرير الجانبي */
+        .row-inner .live-card { width: 42vw; flex: 0 0 auto; } 
         .live-img-wrapper { width: 100%; aspect-ratio: 16 / 9; background: #111; border-radius: 3vw; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid #333; position: relative; }
         .live-img-wrapper img { width: 80%; height: 80%; object-fit: contain; }
         .live-fallback-text { position: absolute; color: white; font-size: 4vw; font-weight: bold; text-align: center; width: 90%; word-wrap: break-word; }
@@ -198,6 +193,9 @@
     let currentProfile = ''; let currentTab = 'movies'; 
     let activeStreamData = null; let searchTimeout = null;
     let currentCategoryItems = []; let displayedItemsCount = 0; const ITEMS_PER_PAGE = 45;
+
+    // 🔥 الذاكرة الشاملة لحفظ كل شيء يتم تحميله لمنع خطأ المسلسلات
+    window.allLoadedItems = {};
 
     function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 4000); }
 
@@ -376,8 +374,11 @@
         } catch(e) {}
     }
 
-    // بناء الكروت (Flip Cards و Resume)
     function createCardHtml(item, type, resumeTime = 0, isResumeRow = false) {
+        // 🔥 الحفظ الدائم في الذاكرة الشاملة لحل خطأ المسلسلات نهائياً
+        const itemId = item.stream_id || item.series_id || item.id;
+        window.allLoadedItems[itemId] = item;
+        
         const title = item.name || item.title || 'بدون اسم';
         const imgUrl = item.stream_icon || item.cover || '';
         const rating = item.rating ? `<svg class="svg-icon" style="width:3.5vw;height:3.5vw; color:var(--primary);"><use href="#icon-star"></use></svg> ${item.rating}` : '';
@@ -394,24 +395,22 @@
             let p = resumeTime > 0 ? `<div class="progress-bar"><div class="progress-fill" style="width: ${Math.min((resumeTime / 7200) * 100, 100)}%"></div></div>` : '';
             
             if (isResumeRow) {
-                // صف متابعة المشاهدة (لا ينقلب ليتيح ضغط الأزرار بكل راحة)
                 return `
                     <div class="card" style="pointer-events: none;">
                         <div class="card-front" style="pointer-events: auto;">
                             <img src="${imgUrl}" onerror="this.style.display='none';">
                             ${p}
-                            <div class="resume-overlay" onclick="window.resumeItem('${item.stream_id || item.id}', '${type}');">
+                            <div class="resume-overlay" onclick="window.resumeItem('${itemId}', '${type}');">
                                 <div class="resume-play-btn"><svg class="svg-icon"><use href="#icon-play"></use></svg></div>
-                                <div class="resume-info-btn" onclick="event.stopPropagation(); window.openItemDetails('${item.stream_id || item.id}', '${type}');">?</div>
+                                <div class="resume-info-btn" onclick="event.stopPropagation(); window.openItemDetails('${itemId}', '${type}');">?</div>
                             </div>
                         </div>
                     </div>
                 `;
             }
 
-            // الكروت العادية تنقلب (Flip)
             return `
-                <div class="card" onclick="window.flipCard(this, '${item.stream_id || item.id}', '${type}')">
+                <div class="card" onclick="window.flipCard(this, '${itemId}', '${type}')">
                     <div class="card-front">
                         <img src="${imgUrl}" onerror="this.style.display='none';">
                         ${p}
@@ -420,14 +419,13 @@
                         <div class="card-back-text">${title}</div>
                         <div class="card-back-text">${rating}</div>
                         <div class="card-back-text dynamic-meta"><span style="font-size:2.5vw; opacity:0.5;">اضغط لعرض التفاصيل</span></div>
-                        <button class="action-btn" style="padding:1.5vh; font-size:3.5vw; margin-top:2vh;" onclick="event.stopPropagation(); window.openItemDetails('${item.stream_id || item.id}', '${type}')">التفاصيل</button>
+                        <button class="action-btn" style="padding:1.5vh; font-size:3.5vw; margin-top:2vh;" onclick="event.stopPropagation(); window.openItemDetails('${itemId}', '${type}')">التفاصيل</button>
                     </div>
                 </div>
             `;
         }
     }
 
-    // دالة القلب الديناميكية التي تجلب التقييم والمدة
     window.flipCard = (el, id, type) => {
         el.classList.toggle('flipped');
         if (el.classList.contains('flipped') && !el.dataset.fetched) {
@@ -444,11 +442,11 @@
     };
 
     window.resumeItem = async (id, type) => {
-        let item = currentCategoryItems.find(x => (x.stream_id||x.id) == id) || activeStreamData;
+        let item = window.allLoadedItems[id];
         if(item) openDetails(item, type, true);
     }
     window.openItemDetails = (id, type) => {
-        let item = currentCategoryItems.find(x => (x.stream_id||x.id) == id) || activeStreamData;
+        let item = window.allLoadedItems[id];
         if(item) openDetails(item, type);
     }
 
@@ -473,6 +471,14 @@
         } else loadMore.innerHTML = '';
     }
 
+    // دالة التحديث الصامت للقسم العلوي (للحفاظ على مكانك عند الرجوع)
+    async function silentRefreshContinueWatching() {
+        const container = document.getElementById('continue-watching-container');
+        container.innerHTML = '';
+        if (currentTab === 'movies') await loadSupabaseRows('user_activity', `متابعة المشاهدة`, 'movie');
+        else if (currentTab === 'series') await loadSupabaseRows('user_activity', `متابعة المشاهدة`, 'series');
+    }
+
     async function loadSupabaseRows(tableName, rowTitle, filterType) {
         const container = document.getElementById('continue-watching-container');
         try {
@@ -490,9 +496,6 @@
                     let obj = typeof row.item_data === 'string' ? JSON.parse(row.item_data) : row.item_data;
                     if(!obj) return;
                     
-                    // تحديث activeStreamData بشكل مؤقت لتمريرها
-                    activeStreamData = { ...obj, type: row.item_type, id: row.movie_id || row.item_id, resume_time: row.resume_time, current_episode_id: obj.current_episode_id, current_episode_num: obj.current_episode_num, current_episode_ext: obj.current_episode_ext };
-                    
                     const cardWrap = document.createElement('div'); cardWrap.className = row.item_type === 'live' ? 'live-card' : 'card-container';
                     cardWrap.innerHTML = createCardHtml(obj, row.item_type, tableName === 'user_activity' ? row.resume_time : 0, tableName === 'user_activity');
                     if(row.item_type === 'live') cardWrap.onclick = () => playStream(obj.stream_id || obj.id, 'live', '');
@@ -507,11 +510,20 @@
         history.pushState({view: 'details'}, 'Details', '#details');
         document.getElementById('main-screen').classList.add('hidden'); document.getElementById('details-screen').classList.remove('hidden');
         
-        const id = item.stream_id || item.series_id || (activeStreamData ? activeStreamData.id : null);
+        const id = item.stream_id || item.series_id || item.id;
+        
+        // إعداد بيانات العرض الحالية
+        activeStreamData = { ...item, type, id, resume_time: 0 };
+
         try {
             const { data } = await supabaseClient.from('user_activity').select('*').eq('username', iptv.user).eq('profile_name', currentProfile).eq('movie_id', String(id)).maybeSingle();
-            activeStreamData = { ...item, type, id, resume_time: data ? data.resume_time : 0, current_episode_id: data && data.item_data.current_episode_id ? data.item_data.current_episode_id : null, current_episode_num: data && data.item_data.current_episode_num ? data.item_data.current_episode_num : null, current_episode_ext: data && data.item_data.current_episode_ext ? data.item_data.current_episode_ext : 'mkv' };
-        } catch (err) { activeStreamData = { ...item, type, id, resume_time: 0 }; }
+            if (data) {
+                activeStreamData.resume_time = data.resume_time;
+                activeStreamData.current_episode_id = data.item_data.current_episode_id || null;
+                activeStreamData.current_episode_num = data.item_data.current_episode_num || null;
+                activeStreamData.current_episode_ext = data.item_data.current_episode_ext || 'mkv';
+            }
+        } catch (err) {}
 
         document.getElementById('detail-title').innerText = item.name || item.title || 'بدون اسم';
         document.getElementById('detail-poster').src = item.stream_icon || item.cover;
@@ -577,37 +589,42 @@
             div.onclick = () => { 
                 activeStreamData.current_episode_id = String(ep.id); activeStreamData.current_episode_num = ep.episode_num; activeStreamData.current_episode_ext = ep.container_extension || 'mkv'; 
                 
-                let nextEpData = null;
-                if(index + 1 < epsList.length) {
-                    let nextEp = epsList[index + 1];
-                    let domain = iptv.domain; if (!domain.startsWith('http')) domain = 'http://' + domain;
-                    let nextUrl = `${domain}/series/${iptv.user}/${iptv.pass}/${nextEp.id}.${nextEp.container_extension || 'mkv'}`;
-                    nextEpData = { id: String(nextEp.id), num: nextEp.episode_num, url: nextUrl };
+                // 🔥 تجهيز المصفوفة الكاملة للحلقات المتبقية لزر (الحلقة القادمة)
+                let remainingEps = [];
+                let domain = iptv.domain; if (!domain.startsWith('http')) domain = 'http://' + domain;
+                for(let i = index + 1; i < epsList.length; i++) {
+                    let nextEp = epsList[i];
+                    remainingEps.push({
+                        id: String(nextEp.id),
+                        num: nextEp.episode_num,
+                        ext: nextEp.container_extension || 'mkv',
+                        url: `${domain}/series/${iptv.user}/${iptv.pass}/${nextEp.id}.${nextEp.container_extension || 'mkv'}`
+                    });
                 }
 
-                playStream(ep.id, 'series', ep.container_extension || 'mkv', epResumeTime, nextEpData); 
+                playStream(ep.id, 'series', ep.container_extension || 'mkv', epResumeTime, remainingEps); 
             }; 
             container.appendChild(div);
         });
     }
 
-    function playStream(streamId, type, ext, resumeTime = 0, nextEpisode = null) {
+    function playStream(streamId, type, ext, resumeTime = 0, remainingEps = []) {
         let domain = iptv.domain; if (!domain.startsWith('http')) domain = 'http://' + domain;
         let url = type === 'live' ? `${domain}/${iptv.user}/${iptv.pass}/${streamId}` : `${domain}/${type === 'movie' ? 'movie' : 'series'}/${iptv.user}/${iptv.pass}/${streamId}.${ext}`;
         
-        // 🔥 الحل الجذري للمزامنة: إرسال الـ ID الخاص بالمسلسل (Parent) لكي لا يتكرر في القائمة
         let parentId = activeStreamData ? activeStreamData.id : streamId;
 
         if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify({ 
             type: 'PLAY_VIDEO', url: url, videoId: String(parentId), userId: iptv.user, profileName: currentProfile, 
-            itemType: type, itemData: activeStreamData, resumeTime: Number(resumeTime), nextEpisode: nextEpisode 
+            itemType: type, itemData: activeStreamData, resumeTime: Number(resumeTime), remainingEps: remainingEps 
         }));
     }
 
+    // 🔥 منع تحديث الصفحة بالكامل عند الرجوع للحفاظ على مكان التمرير
     window.addEventListener('popstate', () => { 
         document.getElementById('details-screen').classList.add('hidden'); 
         document.getElementById('main-screen').classList.remove('hidden'); 
-        loadPage(currentTab); // لتحديث شريط متابعة المشاهدة عند الرجوع
+        silentRefreshContinueWatching(); // تحديث صامت لشريط المتابعة فقط
     });
 </script>
 </body>
