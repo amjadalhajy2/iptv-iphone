@@ -1,39 +1,28 @@
 {
   "expo": {
-    "name": "StreamIPTV",
-    "slug": "StreamIPTV",
+    "name": "Amjad Stream",
+    "slug": "amjad-stream",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "streamiptv",
+    "icon": "./assets/Gemini_Generated_Image_v1c16mv1c16mv1c1.png",
+    "scheme": "amjadstream",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.anonymous.StreamIPTV"
     },
     "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
-      },
       "package": "com.anonymous.StreamIPTV"
     },
     "plugins": [
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "backgroundColor": "#0a0a0a",
+          "image": "./assets/Gemini_Generated_Image_v1c16mv1c16mv1c1.png",
+          "imageWidth": 150
         }
       ],
       "./withATSBypass.js"
-    ],
-    "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
-    }
+    ]
   }
 }
