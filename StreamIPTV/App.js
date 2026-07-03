@@ -7,7 +7,7 @@ import { createClient } from '@supabase/supabase-js';
 import ReactNativeBlobUtil from 'react-native-blob-util'; // 🔥 المكتبة الجديدة
 
 const SUPABASE_URL = 'https://kpfymvtyqbyjmlqfgujo.supabase.co'; 
-const SUPABASE_ANON_KEY = 'ضع_مفتاح_سوبابيس_الخاص_بك_هنا'; // ⬅️ ضع مفتاحك الطويل هنا
+const SUPABASE_ANON_KEY = 'sb_publishable_g7dHfpmPHcQwAWsO9FFuGw_4lG8fyLc';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export default function App() {
@@ -96,7 +96,7 @@ export default function App() {
       {!videoUrl ? (
         <WebView
           ref={webViewRef}
-          source={{ uri: 'https://amjad-alhajji.github.io/YOUR_REPO_NAME/' }} // ⬅️ تذكر وضع رابط صفحتك هنا
+          source={{ uri: 'https://amjadalhajy2.github.io/iptv-iphone/' }} // ⬅️ تذكر وضع رابط صفحتك هنا
           javaScriptEnabled={true}
           domStorageEnabled={true}
           allowsInlineMediaPlayback={true}
