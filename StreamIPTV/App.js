@@ -1,6 +1,6 @@
 import 'react-native-url-polyfill/auto';
 import React, { useState, useRef, useEffect } from 'react';
-import { StyleSheet, View, StatusBar, TouchableOpacity, Text, Dimensions, TouchableWithoutFeedback, PanResponder, Alert } from 'react-native';
+import { StyleSheet, View, StatusBar, TouchableOpacity, Text, Dimensions, TouchableWithoutFeedback, PanResponder } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { VLCPlayer } from 'react-native-vlc-media-player';
 import { createClient } from '@supabase/supabase-js';
@@ -30,8 +30,8 @@ export default function App() {
   // حالات الإيماءات والأبعاد
   const [volume, setVolume] = useState(100);
   const [brightness, setBrightness] = useState(0.5);
-  const [resizeMode, setResizeMode] = useState('contain'); // contain, cover, stretch
-  const [indicator, setIndicator] = useState({ type: null, value: 0 }); // type: 'volume' | 'brightness'
+  const [aspectRatio, setAspectRatio] = useState('16:9'); // الأبعاد المعروفة
+  const [indicator, setIndicator] = useState({ type: null, value: 0 }); // type: 'volume' | 'brightness' | 'aspect'
   
   // حالات شريط التمرير
   const [isSliding, setIsSliding] = useState(false);
@@ -67,7 +67,7 @@ export default function App() {
         setIsPaused(false);
         setProgress(0);
         setDuration(0);
-        setResizeMode('contain'); // العودة للوضع الافتراضي
+        setAspectRatio('16:9'); // العودة للبعد الافتراضي
         triggerControlsTimeout();
       }
       
@@ -97,7 +97,7 @@ export default function App() {
   };
 
   const onProgress = (e) => {
-    if(isSliding) return; // منع تحديث الشريط برمجياً أثناء سحب المستخدم له
+    if(isSliding) return; 
     
     const currentDur = e.duration;
     const currentPos = e.currentTime;
@@ -119,11 +119,22 @@ export default function App() {
   };
 
   const playNextEpisode = () => {
-    if(!videoData?.nextEpisode) return;
+    if(!videoData?.remainingEps || videoData.remainingEps.length === 0) return;
+    
+    // سحب الحلقة التالية من المصفوفة وتحديث القائمة
+    const nextEp = videoData.remainingEps[0];
+    const newRemaining = videoData.remainingEps.slice(1);
+    
     let updatedItemData = { ...videoData.itemData };
-    updatedItemData.current_episode_id = videoData.nextEpisode.id;
-    updatedItemData.current_episode_num = videoData.nextEpisode.num;
-    setVideoData({ ...videoData, url: videoData.nextEpisode.url, itemData: updatedItemData, nextEpisode: videoData.nextEpisode.nextAfterThat });
+    updatedItemData.current_episode_id = nextEp.id;
+    updatedItemData.current_episode_num = nextEp.num;
+
+    setVideoData({ 
+        ...videoData, 
+        url: nextEp.url, 
+        itemData: updatedItemData, 
+        remainingEps: newRemaining 
+    });
     setResumeTime(0); setHasResumed(false); setProgress(0);
   };
 
@@ -151,14 +162,12 @@ export default function App() {
     indicatorTimer.current = setTimeout(() => setIndicator({ type: null, value: 0 }), 1500);
   };
 
-  const cycleResizeMode = () => {
-    const modes = ['contain', 'cover', 'stretch']; // احتواء، تكبير، ملء الشاشة
-    setResizeMode(modes[(modes.indexOf(resizeMode) + 1) % modes.length]);
-    triggerControlsTimeout();
-  };
-
-  const handleCast = () => {
-    Alert.alert("مشاركة الشاشة (Screen Mirroring)", "يرجى فتح 'مركز التحكم' (Control Center) في الآيفون والضغط على زر انعكاس الشاشة لبث الفيديو إلى التلفاز بوضوح عالي.", [{ text: "حسناً" }]);
+  // 🔥 التبديل الفعلي لأبعاد الفيديو
+  const cycleAspectRatio = () => {
+    const ratios = ['16:9', '4:3', 'fill', '16:10', '21:9', 'best fit'];
+    const nextRatio = ratios[(ratios.indexOf(aspectRatio) + 1) % ratios.length];
+    setAspectRatio(nextRatio);
+    showIndicatorPopup('aspect', nextRatio.toUpperCase());
     triggerControlsTimeout();
   };
 
@@ -170,9 +179,7 @@ export default function App() {
       onMoveShouldSetPanResponder: (evt, gestureState) => Math.abs(gestureState.dy) > 15,
       onPanResponderMove: async (evt, gestureState) => {
         const { dy, x0 } = gestureState;
-        // الشاشة أفقية، لذا نستخدم screenHeight للتمييز بين اليمين واليسار (لأن الأبعاد تنقلب)
         const isLeftSide = x0 < screenHeight / 2; 
-        
         if (isLeftSide) {
           let newBrightness = Math.max(0, Math.min(1, brightness - (dy / 250)));
           setBrightness(newBrightness);
@@ -195,8 +202,8 @@ export default function App() {
     lastTap.current = now;
   };
 
-  // إظهار زر الحلقة القادمة في آخر 3 دقائق
-  const showNextEpBtn = videoData?.nextEpisode && (duration > 0) && ((duration - progress) <= 180000);
+  // 🔥 زر الحلقة القادمة: في الـ 3 دقائق الأخيرة (180,000 مللي ثانية) وتوجد حلقات متبقية
+  const showNextEpBtn = videoData?.remainingEps?.length > 0 && (duration > 0) && ((duration - progress) <= 180000);
 
   return (
     <View style={styles.container}>
@@ -211,15 +218,18 @@ export default function App() {
           
           <TouchableWithoutFeedback onPress={handleScreenTap}>
             <View style={styles.videoTouchable}>
-              <VLCPlayer ref={vlcRef} style={styles.videoPlayer} videoAspectRatio="16:9" source={{ uri: videoData.url }} autoplay={true} paused={isPaused} resizeMode={resizeMode} onProgress={onProgress} onEnd={handleClosePlayer} onError={handleClosePlayer} volume={volume} />
+              {/* 🔥 ربط الـ Aspect Ratio برمجياً هنا */}
+              <VLCPlayer ref={vlcRef} style={styles.videoPlayer} videoAspectRatio={aspectRatio} source={{ uri: videoData.url }} autoplay={true} paused={isPaused} resizeMode="cover" onProgress={onProgress} onEnd={handleClosePlayer} onError={handleClosePlayer} volume={volume} />
             </View>
           </TouchableWithoutFeedback>
 
-          {/* نافذة الإضاءة والصوت المنبثقة */}
+          {/* نافذة الإضاءة والصوت والأبعاد المنبثقة */}
           {indicator.type && (
             <View style={styles.indicatorPopup}>
-              <Ionicons name={indicator.type === 'volume' ? (indicator.value === 0 ? "volume-mute" : "volume-high") : "sunny"} size={45} color="white" />
-              <Text style={styles.indicatorText}>{indicator.value}%</Text>
+              {indicator.type === 'volume' && <Ionicons name={indicator.value === 0 ? "volume-mute" : "volume-high"} size={45} color="white" />}
+              {indicator.type === 'brightness' && <Ionicons name="sunny" size={45} color="white" />}
+              {indicator.type === 'aspect' && <MaterialIcons name="aspect-ratio" size={45} color="white" />}
+              <Text style={styles.indicatorText}>{indicator.type === 'aspect' ? indicator.value : `${indicator.value}%`}</Text>
             </View>
           )}
 
@@ -232,13 +242,10 @@ export default function App() {
                 </TouchableOpacity>
                 <Text style={styles.videoTitleText}>{videoData.itemData?.name || videoData.itemData?.title || 'جاري التشغيل'}</Text>
                 
-                <View style={{flex: 1}} /> {/* مساحة فاصلة */}
+                <View style={{flex: 1}} />
                 
-                {/* أزرار البث والأبعاد */}
-                <TouchableOpacity style={styles.topRightBtn} onPress={handleCast}>
-                  <Ionicons name="tv-outline" size={26} color="white" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.topRightBtn} onPress={cycleResizeMode}>
+                {/* زر الأبعاد فقط */}
+                <TouchableOpacity style={styles.topRightBtn} onPress={cycleAspectRatio}>
                   <MaterialIcons name="aspect-ratio" size={26} color="white" />
                 </TouchableOpacity>
               </View>
@@ -279,16 +286,11 @@ export default function App() {
                     maximumTrackTintColor="rgba(255,255,255,0.3)"
                     thumbTintColor="#e50914"
                     onValueChange={(val) => {
-                      setIsSliding(true);
-                      setSlidingTime(val);
-                      clearTimeout(controlsTimer.current); // إيقاف إخفاء الأزرار أثناء السحب
+                      setIsSliding(true); setSlidingTime(val); clearTimeout(controlsTimer.current);
                     }}
                     onSlidingComplete={(val) => {
                       setIsSliding(false);
-                      if(vlcRef.current && duration > 0){
-                        vlcRef.current.seek(val / duration);
-                        triggerControlsTimeout();
-                      }
+                      if(vlcRef.current && duration > 0){ vlcRef.current.seek(val / duration); triggerControlsTimeout(); }
                     }}
                   />
                   <Text style={styles.timeText}>{formatTime(duration)}</Text>
@@ -322,15 +324,12 @@ const styles = StyleSheet.create({
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: 10, width: '100%' },
   timeText: { color: '#FFF', fontSize: 14, fontWeight: 'bold', width: 55, textAlign: 'center' },
   
-  // النافذة المنبثقة للصوت والإضاءة
   indicatorPopup: { position: 'absolute', alignSelf: 'center', top: '40%', backgroundColor: 'rgba(0,0,0,0.7)', padding: 25, borderRadius: 15, alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
   indicatorText: { color: 'white', fontSize: 22, fontWeight: 'bold', marginTop: 10 },
   
-  // فقاعة الوقت عند سحب الشريط
   slidingBubble: { alignSelf: 'center', backgroundColor: '#e50914', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 8, marginBottom: 10 },
   slidingBubbleText: { color: 'white', fontSize: 16, fontWeight: 'bold', letterSpacing: 1 },
 
-  // زر الحلقة القادمة
   nextEpAbsoluteBtn: { position: 'absolute', right: 40, bottom: 80, flexDirection: 'row', alignItems: 'center', backgroundColor: '#e50914', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 8, shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 5, shadowOffset: {width:0, height:2} },
   nextEpAbsoluteText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
 });
