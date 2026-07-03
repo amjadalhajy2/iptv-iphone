@@ -219,25 +219,34 @@
         }, 300);
     }
 
-    // 💡 دالة الجسر الجديدة للتخاطب المباشر مع تطبيق الآيفون (تحل مشكلة الحظر)
+    // 🔥 التقنية الجديدة: استقبال الرسائل من التطبيق كنفق بيانات آمن (يمنع التجمد)
     window.pendingFetches = {};
-    window.handleProxyResponse = function(reqId, dataStr, errorStr) {
-        if (window.pendingFetches[reqId]) {
-            if (errorStr) {
-                window.pendingFetches[reqId].reject(new Error(decodeURIComponent(errorStr)));
-            } else {
-                try {
-                    const parsedData = JSON.parse(decodeURIComponent(dataStr));
-                    window.pendingFetches[reqId].resolve(parsedData);
-                } catch(e) {
-                    window.pendingFetches[reqId].reject(new Error('بيانات السيرفر غير صالحة'));
+
+    const handleNativeMessage = (event) => {
+        try {
+            const msg = JSON.parse(event.data);
+            if (msg.type === 'PROXY_RESPONSE') {
+                const pending = window.pendingFetches[msg.reqId];
+                if (pending) {
+                    if (msg.error) {
+                        pending.reject(new Error(msg.error));
+                    } else {
+                        // تحويل النص المستلم إلى كائن JSON
+                        pending.resolve(JSON.parse(msg.data));
+                    }
+                    delete window.pendingFetches[msg.reqId];
                 }
             }
-            delete window.pendingFetches[reqId];
+        } catch (e) {
+            console.error("خطأ في قراءة بيانات التطبيق", e);
         }
     };
 
-    // 💡 دالة الإرسال الذكية (تقوم بإضافة http تلقائياً وتوجه الطلب للتطبيق)
+    // الاستماع لرسائل التطبيق
+    window.addEventListener('message', handleNativeMessage);
+    document.addEventListener('message', handleNativeMessage);
+
+    // دالة الإرسال 
     async function apiFetch(action, extraParams = '') {
         let domain = iptv.domain || document.getElementById('iptv-domain').value.trim();
         let user = iptv.user || document.getElementById('iptv-user').value.trim();
@@ -257,6 +266,7 @@
                 const reqId = Math.random().toString(36).substring(7);
                 window.pendingFetches[reqId] = { resolve, reject };
                 
+                // مؤقت الأمان لمنع التعليق
                 setTimeout(() => {
                     if (window.pendingFetches[reqId]) {
                         window.pendingFetches[reqId].reject(new Error('السيرفر لا يستجيب، تأكد من الرابط'));
@@ -270,6 +280,7 @@
                     reqId: reqId
                 }));
             } else {
+                // متصفح الكمبيوتر العادي
                 fetch(url).then(r => r.json()).then(resolve).catch(reject);
             }
         });
@@ -310,9 +321,12 @@
                 showToast('✅ تم الاتصال بنجاح');
                 btn.innerText = 'دخول'; btn.disabled = false;
                 fetchProfilesFromSupabase();
-            } else { throw new Error('بيانات الدخول غير صحيحة'); }
+            } else { 
+                throw new Error('بيانات الدخول غير صحيحة'); 
+            }
         } catch (e) {
-            showToast('❌ فشل الاتصال: تأكد من الرابط أو بيانات الدخول');
+            // الآن الإشعارات ستظهر بنجاح ولن يعلق الزر
+            showToast('❌ ' + (e.message || 'فشل الاتصال: تأكد من الرابط أو البيانات'));
             btn.innerText = 'دخول'; btn.disabled = false;
             iptv = { domain: '', user: '', pass: '' };
         }
@@ -780,7 +794,6 @@
         });
     }
 
-    // 💡 التعديل الأهم: دالة التشغيل التي تعطي الأمر لتطبيق الآيفون بدلاً من المتصفح العادي
     function playStream(id, type, ext) {
         let domain = iptv.domain;
         if (!domain.startsWith('http')) domain = 'http://' + domain;
@@ -790,12 +803,11 @@
             : `${domain}/${type === 'movie' ? 'movie' : 'series'}/${iptv.user}/${iptv.pass}/${id}.${ext}`;
         
         if (window.ReactNativeWebView) {
-            // إرسال رسالة للتطبيق لفتح مشغل الـ VLC الأصلي
             window.ReactNativeWebView.postMessage(JSON.stringify({
                 type: 'PLAY_VIDEO',
                 url: url,
                 videoId: String(id),
-                userId: iptv.user // معرف المستخدم للمزامنة
+                userId: iptv.user
             }));
         } else {
             alert('يرجى فتح الموقع من داخل تطبيق الآيفون لتشغيل الفيديو بكفاءة عالية.');
