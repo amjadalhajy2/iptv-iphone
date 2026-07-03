@@ -18,12 +18,7 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false,
       "package": "com.anonymous.StreamIPTV"
-    },
-    "web": {
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
       [
@@ -40,7 +35,9 @@
           "ios": {
             "infoPlist": {
               "NSAppTransportSecurity": {
-                "NSAllowsArbitraryLoads": true
+                "NSAllowsArbitraryLoads": true,
+                "NSAllowsArbitraryLoadsInWebContent": true,
+                "NSAllowsLocalNetworking": true
               }
             }
           }
