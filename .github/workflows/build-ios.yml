@@ -30,29 +30,34 @@ jobs:
         run: |
           cd ${{ env.dir }}
           npm install
-          npx expo install react-native-webview expo-build-properties
-          npm install react-native-vlc-media-player @supabase/supabase-js react-native-url-polyfill react-native-blob-util
+          npx expo install react-native-webview
+          npm install react-native-vlc-media-player @supabase/supabase-js react-native-url-polyfill
 
-      # 1. نجعل Expo يبني ملفات الآيفون أولاً (بشكلها المحمي)
       - name: Clean and Prebuild
         run: |
           cd ${{ env.dir }}
           rm -rf ios .expo
           npx expo prebuild --platform ios --clean
 
-      # 2. 🔥 الاقتحام: ندخل لملفات الآيفون الأصلية ونحذف حماية الـ HTTP بالقوة
-      - name: Force ATS Bypass natively
+      # 🔥 الاختراق النووي المباشر: حقن تصريح HTTP كنص خام داخل Info.plist
+      - name: Direct ATS Bypass Injection
         run: |
-          cd ${{ env.dir }}
-          PLIST_PATH=$(find ios -name "Info.plist" -not -path "*/Pods/*" | head -n 1)
-          echo "Patching $PLIST_PATH"
-          /usr/libexec/PlistBuddy -c "Delete :NSAppTransportSecurity" "$PLIST_PATH" || true
-          /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity dict" "$PLIST_PATH"
-          /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity:NSAllowsArbitraryLoads bool true" "$PLIST_PATH"
-          /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity:NSAllowsArbitraryLoadsInWebContent bool true" "$PLIST_PATH"
-          /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity:NSAllowsLocalNetworking bool true" "$PLIST_PATH"
+          cd ${{ env.dir }}/ios
+          PLIST=$(find . -name "Info.plist" -not -path "*/Pods/*" | head -n 1)
+          echo "Injecting ATS Bypass into $PLIST"
+          # نستخدم sed للبحث عن <key>NSAppTransportSecurity</key>، وإذا لم يجده، يضيفه قبل نهاية الملف
+          sed -i '' '/<dict>/a \
+          <key>NSAppTransportSecurity</key>\
+          <dict>\
+            <key>NSAllowsArbitraryLoads</key>\
+            <true/>\
+            <key>NSAllowsArbitraryLoadsInWebContent</key>\
+            <true/>\
+            <key>NSAllowsLocalNetworking</key>\
+            <true/>\
+          </dict>
+          ' "$PLIST" || true
 
-      # 3. إجبار المكتبات على التخطي
       - name: Inject Podfile Bypass (Ruby)
         run: |
           cd ${{ env.dir }}/ios
