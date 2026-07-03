@@ -4,9 +4,10 @@ import { StyleSheet, View, SafeAreaView, StatusBar, TouchableOpacity, Text } fro
 import { WebView } from 'react-native-webview';
 import { VLCPlayer } from 'react-native-vlc-media-player';
 import { createClient } from '@supabase/supabase-js';
+import ReactNativeBlobUtil from 'react-native-blob-util'; // 🔥 المكتبة الجديدة
 
 const SUPABASE_URL = 'https://kpfymvtyqbyjmlqfgujo.supabase.co'; 
-const SUPABASE_ANON_KEY = 'sb_publishable_g7dHfpmPHcQwAWsO9FFuGw_4lG8fyLc';
+const SUPABASE_ANON_KEY = 'ضع_مفتاح_سوبابيس_الخاص_بك_هنا'; // ⬅️ ضع مفتاحك الطويل هنا
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export default function App() {
@@ -27,18 +28,17 @@ export default function App() {
       
       if (message.type === 'PROXY_FETCH') {
         try {
-          // 🔥 تزوير الهوية: إقناع السيرفر أننا مشغل VLC لسحب البيانات غصباً عنه
-          const response = await fetch(message.url, {
-            headers: {
-              'User-Agent': 'VLC/3.0.0',
-              'Accept': '*/*'
-            }
+          // 🔥 الهجوم النهائي: استخدام محرك جديد يتجاهل أخطاء شهادات SSL/TLS المعطوبة
+          const response = await ReactNativeBlobUtil.config({
+            trusty: true // هذا السطر السحري يكسر حماية TLS و SSL تماماً
+          }).fetch('GET', message.url, {
+            'User-Agent': 'VLC/3.0.0',
+            'Accept': '*/*'
           });
           
-          const text = await response.text();
+          const text = response.text();
           const safeData = encodeURIComponent(text).replace(/'/g, "%27");
           
-          // إرسال البيانات للصفحة بذكاء وبدون تعليق
           const script = `
             if(window.pendingFetches && window.pendingFetches['${message.reqId}']) {
                try {
@@ -46,7 +46,7 @@ export default function App() {
                   var parsed = JSON.parse(decoded);
                   window.pendingFetches['${message.reqId}'].resolve(parsed);
                } catch(e) {
-                  alert("خطأ: السيرفر أرسل بيانات غير مفهومة! تأكد أن الرابط يعمل.");
+                  alert("خطأ: السيرفر أرسل بيانات غير مفهومة.");
                   window.pendingFetches['${message.reqId}'].reject(e);
                }
                delete window.pendingFetches['${message.reqId}'];
@@ -56,9 +56,8 @@ export default function App() {
           webViewRef.current.injectJavaScript(script);
 
         } catch (err) {
-          // ⚠️ في حال حظر نظام آبل الرابط أو كان لا يعمل، سيظهر لك تنبيه صريح
           const script = `
-            alert("فشل الاتصال! السبب: ${err.message}");
+            alert("فشل الاتصال: ${err.message}");
             if(window.pendingFetches && window.pendingFetches['${message.reqId}']) {
                window.pendingFetches['${message.reqId}'].reject(new Error("${err.message}"));
                delete window.pendingFetches['${message.reqId}'];
@@ -97,7 +96,7 @@ export default function App() {
       {!videoUrl ? (
         <WebView
           ref={webViewRef}
-          source={{ uri: 'https://amjadalhajy2.github.io/iptv-iphone/' }} // ⬅️ تذكر وضع رابط صفحتك هنا
+          source={{ uri: 'https://amjad-alhajji.github.io/YOUR_REPO_NAME/' }} // ⬅️ تذكر وضع رابط صفحتك هنا
           javaScriptEnabled={true}
           domStorageEnabled={true}
           allowsInlineMediaPlayback={true}
