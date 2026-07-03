@@ -9,55 +9,6 @@ const SUPABASE_URL = 'https://kpfymvtyqbyjmlqfgujo.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_g7dHfpmPHcQwAWsO9FFuGw_4lG8fyLc';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const injectedJS = `
-  window.pendingFetches = {};
-  
-  window.handleProxyResponse = function(reqId, dataStr, errorStr) {
-    if (window.pendingFetches[reqId]) {
-      if (errorStr) {
-        window.pendingFetches[reqId].reject(new Error(decodeURIComponent(errorStr)));
-      } else {
-        try {
-          const parsedData = JSON.parse(decodeURIComponent(dataStr));
-          window.pendingFetches[reqId].resolve({
-            ok: true,
-            json: () => Promise.resolve(parsedData)
-          });
-        } catch(e) {
-          window.pendingFetches[reqId].reject(new Error('Invalid JSON response'));
-        }
-      }
-      delete window.pendingFetches[reqId];
-    }
-  };
-
-  const originalFetch = window.fetch;
-  window.fetch = async (...args) => {
-    const url = args[0];
-    if (typeof url === 'string' && url.includes('player_api.php')) {
-      return new Promise((resolve, reject) => {
-        const reqId = Math.random().toString(36).substring(7);
-        window.pendingFetches[reqId] = { resolve, reject };
-        
-        setTimeout(() => {
-          if (window.pendingFetches[reqId]) {
-            window.pendingFetches[reqId].reject(new Error('انتهى وقت الطلب (تأكد من الرابط)'));
-            delete window.pendingFetches[reqId];
-          }
-        }, 15000);
-
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'PROXY_FETCH',
-          url: url,
-          reqId: reqId
-        }));
-      });
-    }
-    return originalFetch(...args);
-  };
-  true;
-`;
-
 export default function App() {
   const [videoUrl, setVideoUrl] = useState(null);
   const [videoId, setVideoId] = useState(null);
@@ -76,6 +27,7 @@ export default function App() {
       
       if (message.type === 'PROXY_FETCH') {
         try {
+          // جلب البيانات من السيرفر
           const response = await fetch(message.url, {
             headers: {
               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -83,23 +35,26 @@ export default function App() {
             }
           });
           
+          if (!response.ok) throw new Error(`خطأ في السيرفر: ${response.status}`);
           const text = await response.text();
           
-          try {
-            JSON.parse(text);
-            const safeData = encodeURIComponent(text).replace(/'/g, "%27");
-            const script = `window.handleProxyResponse('${message.reqId}', '${safeData}', null); true;`;
-            webViewRef.current.injectJavaScript(script);
-          } catch(parseError) {
-            const safeError = encodeURIComponent('الرابط لا يحتوي على بيانات IPTV صحيحة').replace(/'/g, "%27");
-            const script = `window.handleProxyResponse('${message.reqId}', null, '${safeError}'); true;`;
-            webViewRef.current.injectJavaScript(script);
-          }
+          // 🔥 الإرسال الآمن عبر postMessage بدلاً من الحقن المباشر
+          const reply = JSON.stringify({
+            type: 'PROXY_RESPONSE',
+            reqId: message.reqId,
+            data: text,
+            error: null
+          });
+          webViewRef.current.postMessage(reply);
 
         } catch (err) {
-          const safeError = encodeURIComponent(err.message || 'فشل الاتصال بالسيرفر').replace(/'/g, "%27");
-          const script = `window.handleProxyResponse('${message.reqId}', null, '${safeError}'); true;`;
-          webViewRef.current.injectJavaScript(script);
+          const reply = JSON.stringify({
+            type: 'PROXY_RESPONSE',
+            reqId: message.reqId,
+            data: null,
+            error: err.message || 'فشل الاتصال بالسيرفر'
+          });
+          webViewRef.current.postMessage(reply);
         }
       }
     } catch (error) {
@@ -131,12 +86,11 @@ export default function App() {
       {!videoUrl ? (
         <WebView
           ref={webViewRef}
-          source={{ uri: 'https://amjadalhajy2.github.io/iptv-iphone/' }} // ⬅️ تذكر وضع رابط صفحتك هنا
+          source={{ uri: 'https://amjadalhajy2.github.io/iptv-iphone/' }} // ⬅️ ضع رابط صفحتك هنا
           javaScriptEnabled={true}
           domStorageEnabled={true}
           allowsInlineMediaPlayback={true}
           originWhitelist={['*']} 
-          injectedJavaScriptBeforeContentLoaded={injectedJS}
           onMessage={handleMessageFromWeb}
           style={styles.webview}
         />
