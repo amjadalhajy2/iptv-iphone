@@ -30,46 +30,29 @@ jobs:
         run: |
           cd ${{ env.dir }}
           npm install
-          npx expo install react-native-webview expo-build-properties
+          npx expo install react-native-webview
           npm install react-native-vlc-media-player @supabase/supabase-js react-native-url-polyfill
 
-      # 🔥 الاختراق الجديد: زراعة تصريح فك الحظر (HTTP) داخل قلب التطبيق مباشرة
-      - name: Force ATS Bypass in app.json
-        run: |
-          cd ${{ env.dir }}
-          node -e "
-            const fs = require('fs');
-            const path = 'app.json';
-            if (fs.existsSync(path)) {
-              const app = JSON.parse(fs.readFileSync(path, 'utf8'));
-              app.expo = app.expo || {};
-              app.expo.plugins = app.expo.plugins || [];
-              app.expo.plugins = app.expo.plugins.filter(p => p !== 'expo-build-properties' && (!Array.isArray(p) || p[0] !== 'expo-build-properties'));
-              app.expo.plugins.push([
-                'expo-build-properties',
-                {
-                  'ios': {
-                    'infoPlist': {
-                      'NSAppTransportSecurity': {
-                        'NSAllowsArbitraryLoads': true,
-                        'NSAllowsArbitraryLoadsInWebContent': true,
-                        'NSAllowsLocalNetworking': true
-                      }
-                    }
-                  }
-                }
-              ]);
-              fs.writeFileSync(path, JSON.stringify(app, null, 2));
-              console.log('✅ تم دمج تصريح فك حظر الروابط بنجاح');
-            }
-          "
-
+      # 1. نجعل Expo يبني ملفات الآيفون أولاً (بشكلها المحمي)
       - name: Clean and Prebuild
         run: |
           cd ${{ env.dir }}
           rm -rf ios .expo
           npx expo prebuild --platform ios --clean
 
+      # 2. 🔥 الاقتحام: ندخل لملفات الآيفون الأصلية ونحذف حماية الـ HTTP بالقوة
+      - name: Force ATS Bypass natively
+        run: |
+          cd ${{ env.dir }}
+          PLIST_PATH=$(find ios -name "Info.plist" -not -path "*/Pods/*" | head -n 1)
+          echo "Patching $PLIST_PATH"
+          /usr/libexec/PlistBuddy -c "Delete :NSAppTransportSecurity" "$PLIST_PATH" || true
+          /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity dict" "$PLIST_PATH"
+          /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity:NSAllowsArbitraryLoads bool true" "$PLIST_PATH"
+          /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity:NSAllowsArbitraryLoadsInWebContent bool true" "$PLIST_PATH"
+          /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity:NSAllowsLocalNetworking bool true" "$PLIST_PATH"
+
+      # 3. إجبار المكتبات على التخطي
       - name: Inject Podfile Bypass (Ruby)
         run: |
           cd ${{ env.dir }}/ios
