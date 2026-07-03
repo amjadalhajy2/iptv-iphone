@@ -1,4 +1,4 @@
-name: Build Unsigned iOS IPA
+name: Diagnostic iOS Build
 
 on:
   push:
@@ -33,13 +33,48 @@ jobs:
           npx expo install react-native-webview
           npm install react-native-vlc-media-player @supabase/supabase-js react-native-url-polyfill react-native-blob-util
 
+      - name: Create Custom ATS Bypass Plugin
+        run: |
+          cd ${{ env.dir }}
+          cat << 'EOF' > withATSBypass.js
+          const { withInfoPlist } = require('@expo/config-plugins');
+          module.exports = function withATSBypass(config) {
+            return withInfoPlist(config, (config) => {
+              config.modResults.NSAppTransportSecurity = {
+                NSAllowsArbitraryLoads: true,
+                NSAllowsArbitraryLoadsInWebContent: true,
+                NSAllowsLocalNetworking: true
+              };
+              return config;
+            });
+          };
+          EOF
+          
+          node -e "
+            const fs = require('fs');
+            const app = JSON.parse(fs.readFileSync('app.json', 'utf8'));
+            app.expo = app.expo || {};
+            app.expo.plugins = app.expo.plugins || [];
+            app.expo.plugins = app.expo.plugins.filter(p => p !== 'expo-build-properties' && (!Array.isArray(p) || p[0] !== 'expo-build-properties'));
+            if (!app.expo.plugins.includes('./withATSBypass.js')) app.expo.plugins.push('./withATSBypass.js');
+            fs.writeFileSync('app.json', JSON.stringify(app, null, 2));
+          "
+
       - name: Clean and Prebuild
         run: |
           cd ${{ env.dir }}
           rm -rf ios .expo
           npx expo prebuild --platform ios --clean
 
-      # إجبار الـ Pods على التخطي
+      # 🔬 خطوة تشخيصية 1: طباعة ملف الإعدادات قبل بناء التطبيق للتأكد من نجاح الحقن
+      - name: Diagnostic - Print Info.plist before build
+        run: |
+          cd ${{ env.dir }}/ios
+          PLIST=$(find . -name "Info.plist" -not -path "*/Pods/*" | head -n 1)
+          echo "=== CONTENT OF INFO.PLIST ==="
+          cat "$PLIST"
+          echo "============================="
+
       - name: Inject Podfile Bypass (Ruby)
         run: |
           cd ${{ env.dir }}/ios
@@ -62,13 +97,6 @@ jobs:
           cd ${{ env.dir }}/ios
           pod install
 
-      - name: Test JS Bundling & Clear Cache
-        run: |
-          cd ${{ env.dir }}
-          export NODE_OPTIONS="--max-old-space-size=4096"
-          npx expo export --platform ios -c
-
-      # 🔥 الخيار النووي: استبدال محرك xcodebuild بنسخة تفرض التخطي على أي سكربت داخلي بما فيها VLCKit و JSI
       - name: Create xcodebuild Wrapper
         run: |
           mkdir -p $HOME/custom_bin
@@ -87,10 +115,11 @@ jobs:
           echo "export NODE_BINARY=$(command -v node)" > .xcode.env.local
           echo "export NODE_OPTIONS=\"--max-old-space-size=4096\"" >> .xcode.env.local
           
-          # البناء يعتمد الآن على المحرك المخترق
-          xcodebuild -workspace StreamIPTV.xcworkspace -scheme StreamIPTV -configuration Release -sdk iphoneos -derivedDataPath build
-          
+          # تفعيل خيار حفظ التقارير النصية الشاملة لمعرفة جذر أي مشكلة
+          xcodebuild -workspace StreamIPTV.xcworkspace -scheme StreamIPTV -configuration Release -sdk iphoneos -derivedDataPath build -resultBundlePath xcode_result.xcresult
+
       - name: Package to IPA
+        if: success()
         run: |
           cd ${{ env.dir }}/ios/build/Build/Products/Release-iphoneos
           mkdir -p Payload
@@ -98,7 +127,18 @@ jobs:
           zip -r ../../../../StreamIPTV.ipa Payload
 
       - name: Upload IPA Artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: StreamIPTV-IPA
           path: '**/*.ipa'
+
+      # 🔬 خطوة تشخيصية 2: إذا فشل البناء، اجمع كل ملفات الـ Logs المخبأة وارفعها للمستخدم فوراً
+      - name: Diagnostic - Upload Xcode Logs on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Xcode-Failure-Logs
+          path: |
+            **/ios/build/Logs/Build/*.log
+            **/xcode_result.xcresult
