@@ -39,7 +39,15 @@ jobs:
           rm -rf ios .expo
           npx expo prebuild --platform ios --clean
 
-      # 🔥 الحقن الذكي عبر Ruby: يزرع أوامر التخطي داخل الـ post_install الأصلي بأمان
+      # 🔥 الخطوة السحرية الجديدة: كسر حماية Apple للروابط العادية (HTTP) إجبارياً
+      - name: Force ATS (HTTP) Bypass in Info.plist
+        run: |
+          cd ${{ env.dir }}
+          PLIST_PATH=$(find ios -name "Info.plist" -not -path "*/Pods/*" | head -n 1)
+          /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity dict" "$PLIST_PATH" || true
+          /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity:NSAllowsArbitraryLoads bool true" "$PLIST_PATH" || \
+          /usr/libexec/PlistBuddy -c "Set :NSAppTransportSecurity:NSAllowsArbitraryLoads true" "$PLIST_PATH"
+
       - name: Inject Podfile Bypass (Ruby)
         run: |
           cd ${{ env.dir }}/ios
