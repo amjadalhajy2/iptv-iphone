@@ -1,4 +1,4 @@
-name: Diagnostic iOS Build
+name: Build Unsigned iOS IPA
 
 on:
   push:
@@ -11,6 +11,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      # 🚀 التحديث الحاسم: إجبار سيرفر GitHub على الترقية واستخدام أحدث إصدار من مترجم Swift
+      - name: Setup Latest Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -33,48 +39,22 @@ jobs:
           npx expo install react-native-webview
           npm install react-native-vlc-media-player @supabase/supabase-js react-native-url-polyfill react-native-blob-util
 
-      - name: Create Custom ATS Bypass Plugin
-        run: |
-          cd ${{ env.dir }}
-          cat << 'EOF' > withATSBypass.js
-          const { withInfoPlist } = require('@expo/config-plugins');
-          module.exports = function withATSBypass(config) {
-            return withInfoPlist(config, (config) => {
-              config.modResults.NSAppTransportSecurity = {
-                NSAllowsArbitraryLoads: true,
-                NSAllowsArbitraryLoadsInWebContent: true,
-                NSAllowsLocalNetworking: true
-              };
-              return config;
-            });
-          };
-          EOF
-          
-          node -e "
-            const fs = require('fs');
-            const app = JSON.parse(fs.readFileSync('app.json', 'utf8'));
-            app.expo = app.expo || {};
-            app.expo.plugins = app.expo.plugins || [];
-            app.expo.plugins = app.expo.plugins.filter(p => p !== 'expo-build-properties' && (!Array.isArray(p) || p[0] !== 'expo-build-properties'));
-            if (!app.expo.plugins.includes('./withATSBypass.js')) app.expo.plugins.push('./withATSBypass.js');
-            fs.writeFileSync('app.json', JSON.stringify(app, null, 2));
-          "
-
       - name: Clean and Prebuild
         run: |
           cd ${{ env.dir }}
           rm -rf ios .expo
           npx expo prebuild --platform ios --clean
 
-      # 🔬 خطوة تشخيصية 1: طباعة ملف الإعدادات قبل بناء التطبيق للتأكد من نجاح الحقن
-      - name: Diagnostic - Print Info.plist before build
+      # 🔥 اختراق الحماية: السماح بجميع الروابط المشفرة وغير المشفرة (HTTP/HTTPS)
+      - name: Force ATS Bypass natively
         run: |
-          cd ${{ env.dir }}/ios
-          PLIST=$(find . -name "Info.plist" -not -path "*/Pods/*" | head -n 1)
-          echo "=== CONTENT OF INFO.PLIST ==="
-          cat "$PLIST"
-          echo "============================="
+          cd ${{ env.dir }}
+          PLIST_PATH=$(find ios -name "Info.plist" -not -path "*/Pods/*" | head -n 1)
+          /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity dict" "$PLIST_PATH" || true
+          /usr/libexec/PlistBuddy -c "Set :NSAppTransportSecurity:NSAllowsArbitraryLoads true" "$PLIST_PATH" || \
+          /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity:NSAllowsArbitraryLoads bool true" "$PLIST_PATH"
 
+      # إجبار الـ Pods على التخطي
       - name: Inject Podfile Bypass (Ruby)
         run: |
           cd ${{ env.dir }}/ios
@@ -97,6 +77,13 @@ jobs:
           cd ${{ env.dir }}/ios
           pod install
 
+      - name: Test JS Bundling & Clear Cache
+        run: |
+          cd ${{ env.dir }}
+          export NODE_OPTIONS="--max-old-space-size=4096"
+          npx expo export --platform ios -c
+
+      # الغلاف البرمجي لمنع أخطاء التوقيع الداخلي
       - name: Create xcodebuild Wrapper
         run: |
           mkdir -p $HOME/custom_bin
@@ -115,11 +102,9 @@ jobs:
           echo "export NODE_BINARY=$(command -v node)" > .xcode.env.local
           echo "export NODE_OPTIONS=\"--max-old-space-size=4096\"" >> .xcode.env.local
           
-          # تفعيل خيار حفظ التقارير النصية الشاملة لمعرفة جذر أي مشكلة
-          xcodebuild -workspace StreamIPTV.xcworkspace -scheme StreamIPTV -configuration Release -sdk iphoneos -derivedDataPath build -resultBundlePath xcode_result.xcresult
-
+          xcodebuild -workspace StreamIPTV.xcworkspace -scheme StreamIPTV -configuration Release -sdk iphoneos -derivedDataPath build
+          
       - name: Package to IPA
-        if: success()
         run: |
           cd ${{ env.dir }}/ios/build/Build/Products/Release-iphoneos
           mkdir -p Payload
@@ -127,18 +112,7 @@ jobs:
           zip -r ../../../../StreamIPTV.ipa Payload
 
       - name: Upload IPA Artifact
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: StreamIPTV-IPA
           path: '**/*.ipa'
-
-      # 🔬 خطوة تشخيصية 2: إذا فشل البناء، اجمع كل ملفات الـ Logs المخبأة وارفعها للمستخدم فوراً
-      - name: Diagnostic - Upload Xcode Logs on Failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Xcode-Failure-Logs
-          path: |
-            **/ios/build/Logs/Build/*.log
-            **/xcode_result.xcresult
