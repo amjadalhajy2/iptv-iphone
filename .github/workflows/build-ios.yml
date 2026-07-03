@@ -26,37 +26,20 @@ jobs:
           DIR=$(dirname $(find . -name "package.json" | head -n 1))
           echo "dir=$DIR" >> $GITHUB_ENV
 
-      # 🔥 تم إعادة مكتبة expo-build-properties هنا
+      # 🔥 تم إضافة مكتبة react-native-blob-util
       - name: Install dependencies
         run: |
           cd ${{ env.dir }}
           npm install
           npx expo install react-native-webview expo-build-properties
-          npm install react-native-vlc-media-player @supabase/supabase-js react-native-url-polyfill
+          npm install react-native-vlc-media-player @supabase/supabase-js react-native-url-polyfill react-native-blob-util
 
+      # 💡 هنا سيقوم Expo بإنشاء ملفات الحماية بناءً على app.json المعدل (كسر الـ HTTP)
       - name: Clean and Prebuild
         run: |
           cd ${{ env.dir }}
           rm -rf ios .expo
           npx expo prebuild --platform ios --clean
-
-      # 🔥 الاختراق النووي المباشر: حقن تصريح HTTP كنص خام داخل Info.plist
-      - name: Direct ATS Bypass Injection
-        run: |
-          cd ${{ env.dir }}/ios
-          PLIST=$(find . -name "Info.plist" -not -path "*/Pods/*" | head -n 1)
-          echo "Injecting ATS Bypass into $PLIST"
-          sed -i '' '/<dict>/a \
-          <key>NSAppTransportSecurity</key>\
-          <dict>\
-            <key>NSAllowsArbitraryLoads</key>\
-            <true/>\
-            <key>NSAllowsArbitraryLoadsInWebContent</key>\
-            <true/>\
-            <key>NSAllowsLocalNetworking</key>\
-            <true/>\
-          </dict>
-          ' "$PLIST" || true
 
       - name: Inject Podfile Bypass (Ruby)
         run: |
