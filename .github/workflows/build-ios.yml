@@ -33,22 +33,43 @@ jobs:
           npx expo install react-native-webview expo-build-properties
           npm install react-native-vlc-media-player @supabase/supabase-js react-native-url-polyfill
 
+      # 🔥 الاختراق الجديد: زراعة تصريح فك الحظر (HTTP) داخل قلب التطبيق مباشرة
+      - name: Force ATS Bypass in app.json
+        run: |
+          cd ${{ env.dir }}
+          node -e "
+            const fs = require('fs');
+            const path = 'app.json';
+            if (fs.existsSync(path)) {
+              const app = JSON.parse(fs.readFileSync(path, 'utf8'));
+              app.expo = app.expo || {};
+              app.expo.plugins = app.expo.plugins || [];
+              app.expo.plugins = app.expo.plugins.filter(p => p !== 'expo-build-properties' && (!Array.isArray(p) || p[0] !== 'expo-build-properties'));
+              app.expo.plugins.push([
+                'expo-build-properties',
+                {
+                  'ios': {
+                    'infoPlist': {
+                      'NSAppTransportSecurity': {
+                        'NSAllowsArbitraryLoads': true,
+                        'NSAllowsArbitraryLoadsInWebContent': true,
+                        'NSAllowsLocalNetworking': true
+                      }
+                    }
+                  }
+                }
+              ]);
+              fs.writeFileSync(path, JSON.stringify(app, null, 2));
+              console.log('✅ تم دمج تصريح فك حظر الروابط بنجاح');
+            }
+          "
+
       - name: Clean and Prebuild
         run: |
           cd ${{ env.dir }}
           rm -rf ios .expo
           npx expo prebuild --platform ios --clean
 
-      # كسر حماية آبل لروابط السيرفرات (HTTP)
-      - name: Force ATS (HTTP) Bypass in Info.plist
-        run: |
-          cd ${{ env.dir }}
-          PLIST_PATH=$(find ios -name "Info.plist" -not -path "*/Pods/*" | head -n 1)
-          /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity dict" "$PLIST_PATH" || true
-          /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity:NSAllowsArbitraryLoads bool true" "$PLIST_PATH" || \
-          /usr/libexec/PlistBuddy -c "Set :NSAppTransportSecurity:NSAllowsArbitraryLoads true" "$PLIST_PATH"
-
-      # إجبار الـ Pods على التخطي
       - name: Inject Podfile Bypass (Ruby)
         run: |
           cd ${{ env.dir }}/ios
@@ -77,13 +98,11 @@ jobs:
           export NODE_OPTIONS="--max-old-space-size=4096"
           npx expo export --platform ios -c
 
-      # 🔥 الخيار النووي: استبدال محرك xcodebuild بنسخة تفرض التخطي على أي سكربت داخلي
       - name: Create xcodebuild Wrapper
         run: |
           mkdir -p $HOME/custom_bin
           cat << 'EOF' > $HOME/custom_bin/xcodebuild
           #!/bin/bash
-          # هذا السطر يلتصق بأي عملية بناء ويضيف لها أوامر التخطي إجبارياً
           /usr/bin/xcodebuild "$@" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" EXPANDED_CODE_SIGN_IDENTITY="" ENABLE_USER_SCRIPT_SANDBOXING=NO
           EOF
           chmod +x $HOME/custom_bin/xcodebuild
@@ -97,7 +116,6 @@ jobs:
           echo "export NODE_BINARY=$(command -v node)" > .xcode.env.local
           echo "export NODE_OPTIONS=\"--max-old-space-size=4096\"" >> .xcode.env.local
           
-          # البناء سيعتمد الآن على المحرك المخترق الذي صنعناه في الخطوة السابقة
           xcodebuild -workspace StreamIPTV.xcworkspace -scheme StreamIPTV -configuration Release -sdk iphoneos -derivedDataPath build
           
       - name: Package to IPA
