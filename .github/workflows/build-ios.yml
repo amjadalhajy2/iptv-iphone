@@ -35,7 +35,7 @@ jobs:
         run: |
           cd ${{ env.dir }}
           npm install
-          npx expo install react-native-webview
+          npx expo install react-native-webview expo-screen-orientation
           npm install react-native-vlc-media-player @supabase/supabase-js react-native-url-polyfill react-native-blob-util
 
       - name: Clean and Prebuild
