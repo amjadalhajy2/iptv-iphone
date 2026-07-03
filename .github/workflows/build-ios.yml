@@ -26,11 +26,12 @@ jobs:
           DIR=$(dirname $(find . -name "package.json" | head -n 1))
           echo "dir=$DIR" >> $GITHUB_ENV
 
+      # 🔥 تم إعادة مكتبة expo-build-properties هنا
       - name: Install dependencies
         run: |
           cd ${{ env.dir }}
           npm install
-          npx expo install react-native-webview
+          npx expo install react-native-webview expo-build-properties
           npm install react-native-vlc-media-player @supabase/supabase-js react-native-url-polyfill
 
       - name: Clean and Prebuild
@@ -45,7 +46,6 @@ jobs:
           cd ${{ env.dir }}/ios
           PLIST=$(find . -name "Info.plist" -not -path "*/Pods/*" | head -n 1)
           echo "Injecting ATS Bypass into $PLIST"
-          # نستخدم sed للبحث عن <key>NSAppTransportSecurity</key>، وإذا لم يجده، يضيفه قبل نهاية الملف
           sed -i '' '/<dict>/a \
           <key>NSAppTransportSecurity</key>\
           <dict>\
