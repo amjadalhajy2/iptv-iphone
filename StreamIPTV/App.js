@@ -27,10 +27,9 @@ export default function App() {
       
       if (message.type === 'PROXY_FETCH') {
         try {
-          // جلب البيانات من السيرفر
           const response = await fetch(message.url, {
             headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+              'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
               'Accept': 'application/json, text/plain, */*'
             }
           });
@@ -38,23 +37,27 @@ export default function App() {
           if (!response.ok) throw new Error(`خطأ في السيرفر: ${response.status}`);
           const text = await response.text();
           
-          // 🔥 الإرسال الآمن عبر postMessage بدلاً من الحقن المباشر
-          const reply = JSON.stringify({
-            type: 'PROXY_RESPONSE',
-            reqId: message.reqId,
-            data: text,
-            error: null
-          });
-          webViewRef.current.postMessage(reply);
+          // 🔥 النظام الجديد المنيع لنقل البيانات من التطبيق للويب
+          const replyObj = { type: 'PROXY_RESPONSE', reqId: message.reqId, data: text, error: null };
+          
+          // التغليف المزدوج يمنع أي خطأ برمجي مهما كان الرد يحتوي على رموز غريبة
+          const script = `
+            if(window.handleNativeMessage) {
+              window.handleNativeMessage({ data: ${JSON.stringify(JSON.stringify(replyObj))} });
+            }
+            true;
+          `;
+          webViewRef.current.injectJavaScript(script);
 
         } catch (err) {
-          const reply = JSON.stringify({
-            type: 'PROXY_RESPONSE',
-            reqId: message.reqId,
-            data: null,
-            error: err.message || 'فشل الاتصال بالسيرفر'
-          });
-          webViewRef.current.postMessage(reply);
+          const replyObj = { type: 'PROXY_RESPONSE', reqId: message.reqId, data: null, error: err.message || 'فشل الاتصال بالسيرفر' };
+          const script = `
+            if(window.handleNativeMessage) {
+              window.handleNativeMessage({ data: ${JSON.stringify(JSON.stringify(replyObj))} });
+            }
+            true;
+          `;
+          webViewRef.current.injectJavaScript(script);
         }
       }
     } catch (error) {
@@ -86,7 +89,7 @@ export default function App() {
       {!videoUrl ? (
         <WebView
           ref={webViewRef}
-          source={{ uri: 'https://amjadalhajy2.github.io/iptv-iphone/' }} // ⬅️ ضع رابط صفحتك هنا
+          source={{ uri: 'https://amjadalhajy2.github.io/iptv-iphone/' }} // ⬅️ تذكر وضع رابط صفحتك هنا
           javaScriptEnabled={true}
           domStorageEnabled={true}
           allowsInlineMediaPlayback={true}
