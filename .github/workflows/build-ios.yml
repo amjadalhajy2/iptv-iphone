@@ -26,20 +26,27 @@ jobs:
           DIR=$(dirname $(find . -name "package.json" | head -n 1))
           echo "dir=$DIR" >> $GITHUB_ENV
 
-      # 🔥 تم إضافة مكتبة react-native-blob-util
       - name: Install dependencies
         run: |
           cd ${{ env.dir }}
           npm install
-          npx expo install react-native-webview expo-build-properties
+          npx expo install react-native-webview
           npm install react-native-vlc-media-player @supabase/supabase-js react-native-url-polyfill react-native-blob-util
 
-      # 💡 هنا سيقوم Expo بإنشاء ملفات الحماية بناءً على app.json المعدل (كسر الـ HTTP)
       - name: Clean and Prebuild
         run: |
           cd ${{ env.dir }}
           rm -rf ios .expo
           npx expo prebuild --platform ios --clean
+
+      # 🔥 الاختراق الآمن 100% باستخدام PlistBuddy للحصول على صلاحيات HTTP إجبارياً
+      - name: Force ATS Bypass natively
+        run: |
+          cd ${{ env.dir }}
+          PLIST_PATH=$(find ios -name "Info.plist" -not -path "*/Pods/*" | head -n 1)
+          echo "Patching $PLIST_PATH"
+          /usr/libexec/PlistBuddy -c "Set :NSAppTransportSecurity:NSAllowsArbitraryLoads true" "$PLIST_PATH" || \
+          /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity:NSAllowsArbitraryLoads bool true" "$PLIST_PATH"
 
       - name: Inject Podfile Bypass (Ruby)
         run: |
@@ -69,12 +76,15 @@ jobs:
           export NODE_OPTIONS="--max-old-space-size=4096"
           npx expo export --platform ios -c
 
-      # ⚠️ تم حذف خطوة "Create xcodebuild Wrapper" بالكامل.
-      # كانت تعترض كل استدعاء لأمر xcodebuild في النظام (عبر PATH)، بما في ذلك
-      # استدعاءات xcodebuild الداخلية التي تشغّلها بعض سكربتات الـ Pods
-      # (مثل سكربت [CP-User] Build ExpoModulesJSI xcframework في Expo SDK 57)،
-      # مما تسبب بفشل تلك السكربتات. الفلاغات الآن تُمرَّر مباشرة لأمر xcodebuild
-      # الرئيسي فقط، وXcode ينشرها تلقائياً على كل الأهداف الفرعية بنفس عملية البناء.
+      - name: Create xcodebuild Wrapper
+        run: |
+          mkdir -p $HOME/custom_bin
+          cat << 'EOF' > $HOME/custom_bin/xcodebuild
+          #!/bin/bash
+          /usr/bin/xcodebuild "$@" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" EXPANDED_CODE_SIGN_IDENTITY="" ENABLE_USER_SCRIPT_SANDBOXING=NO
+          EOF
+          chmod +x $HOME/custom_bin/xcodebuild
+          echo "$HOME/custom_bin" >> $GITHUB_PATH
 
       - name: Build App
         run: |
@@ -83,10 +93,9 @@ jobs:
           export NODE_OPTIONS="--max-old-space-size=4096"
           echo "export NODE_BINARY=$(command -v node)" > .xcode.env.local
           echo "export NODE_OPTIONS=\"--max-old-space-size=4096\"" >> .xcode.env.local
-
-          xcodebuild -workspace StreamIPTV.xcworkspace -scheme StreamIPTV -configuration Release -sdk iphoneos -derivedDataPath build \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" EXPANDED_CODE_SIGN_IDENTITY="" ENABLE_USER_SCRIPT_SANDBOXING=NO
-
+          
+          xcodebuild -workspace StreamIPTV.xcworkspace -scheme StreamIPTV -configuration Release -sdk iphoneos -derivedDataPath build
+          
       - name: Package to IPA
         run: |
           cd ${{ env.dir }}/ios/build/Build/Products/Release-iphoneos
