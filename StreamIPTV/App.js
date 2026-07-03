@@ -4,7 +4,6 @@ import { StyleSheet, View, SafeAreaView, StatusBar, TouchableOpacity, Text } fro
 import { WebView } from 'react-native-webview';
 import { VLCPlayer } from 'react-native-vlc-media-player';
 import { createClient } from '@supabase/supabase-js';
-import ReactNativeBlobUtil from 'react-native-blob-util';
 
 const SUPABASE_URL = 'https://kpfymvtyqbyjmlqfgujo.supabase.co'; 
 const SUPABASE_ANON_KEY = 'sb_publishable_g7dHfpmPHcQwAWsO9FFuGw_4lG8fyLc';
@@ -27,18 +26,10 @@ export default function App() {
       }
       
       if (message.type === 'PROXY_FETCH') {
-        try {
-          // 🔥 الهجوم الجذري: استخدام Blob-Util مع trusty:true لكسر حماية الـ SSL وأخطاء TLS
-          const response = await ReactNativeBlobUtil.config({
-            trusty: true // هذا السطر يتجاهل أي خطأ في شهادة أمان السيرفر
-          }).fetch('GET', message.url, {
-            'User-Agent': 'VLC/3.0.0',
-            'Accept': '*/*'
-          });
-          
-          const text = response.text();
+        
+        // دالة مساعدة لإرسال البيانات الناجحة للصفحة
+        const sendSuccess = (text) => {
           const safeData = encodeURIComponent(text).replace(/'/g, "%27");
-          
           const script = `
             if(window.pendingFetches && window.pendingFetches['${message.reqId}']) {
                try {
@@ -46,7 +37,7 @@ export default function App() {
                   var parsed = JSON.parse(decoded);
                   window.pendingFetches['${message.reqId}'].resolve(parsed);
                } catch(e) {
-                  alert("خطأ: السيرفر أرسل بيانات غير صالحة أو صفحة خطأ.");
+                  alert("خطأ: البيانات المستلمة من السيرفر غير صالحة.");
                   window.pendingFetches['${message.reqId}'].reject(e);
                }
                delete window.pendingFetches['${message.reqId}'];
@@ -54,17 +45,53 @@ export default function App() {
             true;
           `;
           webViewRef.current.injectJavaScript(script);
+        };
 
-        } catch (err) {
+        // دالة مساعدة لإرسال رسالة الخطأ للصفحة
+        const sendError = (errMsg) => {
           const script = `
-            alert("فشل الاتصال: ${err.message}");
+            alert("فشل الاتصال: ${errMsg}");
             if(window.pendingFetches && window.pendingFetches['${message.reqId}']) {
-               window.pendingFetches['${message.reqId}'].reject(new Error("${err.message}"));
+               window.pendingFetches['${message.reqId}'].reject(new Error("${errMsg}"));
                delete window.pendingFetches['${message.reqId}'];
             }
             true;
           `;
           webViewRef.current.injectJavaScript(script);
+        };
+
+        try {
+          // 🚀 المحاولة الأولى: الاتصال المباشر مع تزوير الهوية (لتخطي حظر السيرفرات)
+          const response = await fetch(message.url, {
+            headers: {
+              'User-Agent': 'IPTVSmartersPro', 
+              'Accept': 'application/json'
+            }
+          });
+          
+          if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+          const text = await response.text();
+          sendSuccess(text);
+
+        } catch (primaryError) {
+          console.log("Direct connection failed, trying Proxy...", primaryError.message);
+          
+          try {
+            // 🛡️ المحاولة الثانية (الخطة البديلة): استخدام نفق سحابي عالمي لتخطي حظر مزود الإنترنت وحماية آبل
+            // نضيف رمزاً عشوائياً (Date.now) لمنع الكاش (البيانات القديمة)
+            const nocacheUrl = message.url + (message.url.includes('?') ? '&' : '?') + 'r=' + Date.now();
+            const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(nocacheUrl);
+
+            const proxyResponse = await fetch(proxyUrl);
+            if (!proxyResponse.ok) throw new Error(`Proxy HTTP Error: ${proxyResponse.status}`);
+            
+            const text = await proxyResponse.text();
+            sendSuccess(text);
+
+          } catch (proxyError) {
+            // إذا فشل النفق السحابي أيضاً، فهذا يعني يقيناً أن السيرفر متوقف من المصدر أو الرابط خاطئ
+            sendError(`السيرفر لا يعمل أو الرابط خاطئ تماماً. التفاصيل: ${primaryError.message}`);
+          }
         }
       }
     } catch (error) {
