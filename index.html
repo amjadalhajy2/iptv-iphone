@@ -6,14 +6,12 @@
     <title>Stream IPTV - Mobile UI</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* 🔥 أقفال صارمة لمنع الاهتزاز والمساحات الفارغة نهائياً */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         :root { --bg: #0a0a0a; --primary: #e50914; --text: #ffffff; }
         html, body { background-color: var(--bg); color: var(--text); font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; position: fixed; overscroll-behavior: none; }
         ::-webkit-scrollbar { display: none; }
         .hidden { display: none !important; }
 
-        /* الشاشات القابلة للتمرير محددة العرض والطول */
         .scrollable-screen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; overflow-y: auto; overflow-x: hidden; background: var(--bg); -webkit-overflow-scrolling: touch; }
         
         #toast { visibility: hidden; width: 90vw; max-width: 400px; background-color: rgba(229, 9, 20, 0.95); color: #fff; text-align: center; border-radius: 2vw; padding: 3vw 4vw; position: fixed; z-index: 10000; left: 50%; transform: translateX(-50%); bottom: 4vh; font-size: 4vw; font-weight: bold; box-shadow: 0 1vh 3vh rgba(0,0,0,0.8); transition: opacity 0.4s; opacity: 0; }
@@ -32,7 +30,6 @@
         .row-container { margin-bottom: 3vh; width: 100vw; }
         .row-title { font-size: 5vw; font-weight: bold; margin: 0 4vw 1vh 4vw; }
         
-        /* قفل التمرير الأفقي حتى لا يوسع الصفحة */
         .row-inner { display: flex; gap: 3vw; overflow-x: auto; padding: 1vh 4vw; width: 100vw; box-sizing: border-box; scroll-behavior: smooth; }
         .categories-row { display: flex; gap: 2vw; overflow-x: auto; padding: 1vh 4vw; width: 100vw; box-sizing: border-box; scroll-behavior: smooth; }
         .category-chip { background: rgba(255,255,255,0.1); color: white; padding: 1.5vh 4vw; border-radius: 30px; font-size: 3.5vw; font-weight: bold; white-space: nowrap; border: none; }
@@ -56,7 +53,6 @@
         .load-more-container { text-align: center; padding-bottom: 5vh; width: 100%; }
         .load-more-btn { background: rgba(40,40,40,0.9); color: white; padding: 2vh 6vw; font-size: 4vw; border-radius: 2vw; border: 1px solid rgba(255,255,255,0.2); font-weight: bold; }
 
-        /* شاشة التفاصيل */
         #details-screen { padding: 4vh 4vw; background-size: cover; background-position: center; }
         .details-layout { display: flex; flex-direction: column; gap: 3vh; align-items: center; width: 100%; }
         .details-poster-col { width: 50vw; aspect-ratio: 2/3; border-radius: 3vw; overflow: hidden; box-shadow: 0 2vh 6vh rgba(0,0,0,0.9); position: relative; }
@@ -73,7 +69,6 @@
         .episodes-list-vertical { display: flex; flex-direction: column; gap: 2vh; }
         .ep-card { background: rgba(35,35,35,0.85); padding: 2.5vh 4vw; border-radius: 2vw; display: flex; justify-content: space-between; align-items: center; color: white; font-size: 4vw; border: none; }
 
-        /* شاشات الدخول */
         #login-screen, #profiles-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg); }
         .login-wrapper { background: rgba(20, 20, 20, 0.9); padding: 6vw; border-radius: 4vw; text-align: center; width: 90vw; box-shadow: 0 1vh 3vh rgba(0,0,0,0.5); }
         .login-logo { color: var(--primary); font-size: 10vw; font-weight: 900; margin: 0 0 2vh 0; }
@@ -119,9 +114,9 @@
     </div>
 
     <div id="profiles-screen" class="scrollable-screen hidden">
-        <h1 style="font-size: 6vw; margin-top: 10vh; color:white;">من يشاهد الآن؟</h1>
+        <h1 style="font-size: 6vw; margin-top: 10vh; color:white; text-align:center;">من يشاهد الآن؟</h1>
         <div class="profiles-container" id="profiles-list"></div>
-        <div style="display: flex; flex-direction: column; gap: 2vh; margin-top: 8vh; width: 80vw;">
+        <div style="display: flex; flex-direction: column; gap: 2vh; margin-top: 8vh; width: 80vw; margin-left:10vw;">
             <button class="action-btn" onclick="openAddProfileModal()">+ إضافة مستخدم</button>
             <button class="action-btn fav" onclick="logout()">تسجيل الخروج</button>
         </div>
@@ -141,7 +136,7 @@
             </div>
             <div class="user-info">
                 المستخدم: <span id="current-profile-name"></span>
-                <span style="color: var(--primary); margin-right: 2vw; font-weight: bold;" onclick="changeProfile()">[تبديل]</span>
+                <span style="color: var(--primary); margin-left: 2vw; font-weight: bold;" onclick="changeProfile()">[تبديل]</span>
             </div>
         </header>
 
@@ -168,7 +163,7 @@
             <div class="details-episodes-col hidden" id="series-episodes-col">
                 <div id="episodes-container" class="episodes-list-vertical"></div>
             </div>
-            <button class="action-btn" style="background: rgba(255,255,255,0.2); color:white; margin-top: 2vh;" onclick="history.back()">رجوع</button>
+            <button class="action-btn" style="background: rgba(255,255,255,0.2); color:white; margin-top: 2vh; width:90%;" onclick="history.back()">رجوع</button>
         </div>
     </div>
 
@@ -182,7 +177,6 @@
     let currentTab = 'movies'; 
     let activeStreamData = null; 
     let searchTimeout = null;
-    let flatEpisodes = [];
     let currentCategoryItems = [];
     let displayedItemsCount = 0;
     const ITEMS_PER_PAGE = 50;
@@ -193,7 +187,6 @@
         setTimeout(() => t.classList.remove('show'), 5000);
     }
 
-    // 💡 الجسر السليم لاستقبال البيانات
     window.pendingFetches = {};
 
     async function apiFetch(action, extraParams = '') {
@@ -206,7 +199,11 @@
         
         if(!iptv.domain) { iptv.domain = domain; iptv.user = user; iptv.pass = pass; }
 
-        let url = `${domain}/player_api.php?username=${user}&password=${pass}`;
+        // 🔥 التعديل السحري الأول: تشفير الرموز في اليوزر والباسورد لمنع انكسار الرابط
+        let safeUser = encodeURIComponent(user);
+        let safePass = encodeURIComponent(pass);
+
+        let url = `${domain}/player_api.php?username=${safeUser}&password=${safePass}`;
         if (action) url += `&action=${action}`;
         if (extraParams) url += extraParams;
 
@@ -217,7 +214,7 @@
                 
                 setTimeout(() => {
                     if (window.pendingFetches[reqId]) {
-                        window.pendingFetches[reqId].reject(new Error('انتهى وقت الطلب. ربما السيرفر محظور أو الرابط خاطئ.'));
+                        window.pendingFetches[reqId].reject(new Error('انتهى وقت الطلب. تأكد من صحة الرابط.'));
                         delete window.pendingFetches[reqId];
                     }
                 }, 15000);
@@ -267,7 +264,6 @@
                 throw new Error('بيانات الدخول غير صحيحة'); 
             }
         } catch (e) {
-            // الآن سيظهر الإشعار بالتفصيل من داخل التطبيق!
             showToast('❌ ' + (e.message || 'فشل الاتصال بالسيرفر'));
             btn.innerText = 'دخول'; btn.disabled = false;
             iptv = { domain: '', user: '', pass: '' };
@@ -351,7 +347,7 @@
                 
                 if(currentCategoryItems.length > 0) renderGridItems(currentTab === 'movies' ? 'movie' : (currentTab === 'series' ? 'series' : 'live'));
                 else document.getElementById('grid-container').innerHTML = '<h3 style="padding:5vw; width:100%; text-align:center;">❌ لا يوجد نتائج</h3>';
-            } catch (e) { document.getElementById('grid-container').innerHTML = '<h3 style="padding:5vw; width:100%; text-align:center;">خطأ</h3>'; }
+            } catch (e) { document.getElementById('grid-container').innerHTML = '<h3 style="padding:5vw; width:100%; text-align:center;">خطأ بالبحث</h3>'; }
         }, 800);
     }
 
@@ -538,8 +534,7 @@
 
         document.getElementById('detail-title').innerText = item.name || item.title || 'بدون اسم';
         document.getElementById('detail-poster').src = item.stream_icon || item.cover;
-        document.getElementById('details-screen').style.backgroundImage = `linear-gradient(to right, rgba(10,10,10,1) 10%, rgba(10,10,10,0.85) 100%), url('${item.stream_icon || item.cover}')`;
-
+        
         let baseAction = type === 'movie' ? 'get_vod_info' : 'get_series_info';
         let extraParams = type === 'movie' ? `&vod_id=${id}` : `&series_id=${id}`;
         
@@ -574,11 +569,11 @@
                 if (data.episodes) { actionsHtml += `<select id="season-selector" class="seasons-select"></select>`; }
                 document.getElementById('series-episodes-col').classList.remove('hidden'); 
 
-                flatEpisodes = [];
                 let sortedSeasons = Object.keys(data.episodes).sort((a, b) => Number(a) - Number(b));
+                let allEps = [];
                 sortedSeasons.forEach(s => {
                     let eps = data.episodes[s].sort((a, b) => Number(a.episode_num) - Number(b.episode_num));
-                    flatEpisodes = flatEpisodes.concat(eps);
+                    allEps = allEps.concat(eps);
                 });
             }
             
