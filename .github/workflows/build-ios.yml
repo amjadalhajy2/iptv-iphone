@@ -31,7 +31,7 @@ jobs:
           cd ${{ env.dir }}
           npm install
           npx expo install react-native-webview expo-build-properties
-          npm install react-native-vlc-media-player @supabase/supabase-js react-native-url-polyfill
+          npm install react-native-vlc-media-player @supabase/supabase-js react-native-url-polyfill react-native-blob-util
 
       # 1. نجعل Expo يبني ملفات الآيفون أولاً (بشكلها المحمي)
       - name: Clean and Prebuild
