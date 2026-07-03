@@ -28,11 +28,11 @@ export default function App() {
       
       if (message.type === 'PROXY_FETCH') {
         try {
-          // 🔥 الهجوم الثاني: استخدام Blob Util لكسر كل قيود الآيفون الخاصة بـ HTTP/HTTPS
+          // 🔥 استخدام Blob Util مع تجاهل كامل لأخطاء الشهادات (trusty: true)
           const response = await ReactNativeBlobUtil.config({
-            trusty: true // هذه الخاصية تتجاهل أي أخطاء متعلقة بشهادة الأمان SSL تماماً
+            trusty: true 
           }).fetch('GET', message.url, {
-            'User-Agent': 'IPTVSmartersPro', // لخداع سيرفرات IPTV
+            'User-Agent': 'IPTVSmartersPro', 
             'Accept': '*/*'
           });
           
@@ -46,7 +46,7 @@ export default function App() {
                   var parsed = JSON.parse(decoded);
                   window.pendingFetches['${message.reqId}'].resolve(parsed);
                } catch(e) {
-                  alert("البيانات المستلمة غير صالحة. هل الرابط صحيح؟");
+                  alert("خطأ: بيانات السيرفر غير صالحة.");
                   window.pendingFetches['${message.reqId}'].reject(e);
                }
                delete window.pendingFetches['${message.reqId}'];
@@ -57,7 +57,7 @@ export default function App() {
 
         } catch (err) {
           const script = `
-            alert("لا يزال الاتصال مقطوعاً: ${err.message}");
+            alert("فشل الاتصال: ${err.message}");
             if(window.pendingFetches && window.pendingFetches['${message.reqId}']) {
                window.pendingFetches['${message.reqId}'].reject(new Error("${err.message}"));
                delete window.pendingFetches['${message.reqId}'];
@@ -96,7 +96,7 @@ export default function App() {
       {!videoUrl ? (
         <WebView
           ref={webViewRef}
-          source={{ uri: 'https://amjadalhajy2.github.io/iptv-iphone/' }} // ⬅️ تذكر رابط صفحتك هنا
+          source={{ uri: 'https://amjadalhajy2.github.io/iptv-iphone/' }} // ⬅️ تذكر رابط صفحتك
           javaScriptEnabled={true}
           domStorageEnabled={true}
           allowsInlineMediaPlayback={true}
