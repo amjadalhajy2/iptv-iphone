@@ -31,13 +31,14 @@ jobs:
           DIR=$(dirname $(find . -name "package.json" | head -n 1))
           echo "dir=$DIR" >> $GITHUB_ENV
 
+
       - name: Install dependencies
         run: |
           cd ${{ env.dir }}
           npm install
-          npx expo install react-native-webview expo-screen-orientation
-          npm install react-native-vlc-media-player @supabase/supabase-js react-native-url-polyfill react-native-blob-util
-
+          npx expo install react-native-webview expo-screen-orientation expo-brightness
+          npm install react-native-vlc-media-player @supabase/supabase-js react-native-url-polyfill react-native-blob-util @react-native-community/slider
+      
       - name: Clean and Prebuild
         run: |
           cd ${{ env.dir }}
