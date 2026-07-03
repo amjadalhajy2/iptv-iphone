@@ -2,100 +2,89 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=1920, user-scalable=no, initial-scale=1.0, maximum-scale=1.0">
-    <title>Stream IPTV - Premium Ultimate TV UI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Stream IPTV - Mobile UI</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+        /* إعدادات شاملة لمنع الفراغات والاهتزاز */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         :root { --bg: #0a0a0a; --primary: #e50914; --text: #ffffff; --card-w: 16vw; --card-h: 24vw; }
-        body { background-color: var(--bg); color: var(--text); font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; overflow: hidden; user-select: none; width: 100vw; height: 100vh; }
+        html, body { background-color: var(--bg); color: var(--text); font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; overflow-x: hidden; width: 100vw; height: 100vh; overscroll-behavior: none; }
         ::-webkit-scrollbar { display: none; }
         .hidden { display: none !important; }
+
         .scrollable-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; z-index: 50; background: var(--bg); }
-        #toast { visibility: hidden; min-width: 25vw; background-color: rgba(229, 9, 20, 0.95); color: #fff; text-align: center; border-radius: 0.5vw; padding: 1vw 2vw; position: fixed; z-index: 10000; right: 2vw; bottom: 4vh; font-size: 1.3vw; font-weight: bold; box-shadow: 0 1vh 3vh rgba(0,0,0,0.8); transition: opacity 0.4s; opacity: 0; backdrop-filter: blur(5px); }
+        
+        #toast { visibility: hidden; min-width: 25vw; background-color: rgba(229, 9, 20, 0.95); color: #fff; text-align: center; border-radius: 2vw; padding: 2vw 4vw; position: fixed; z-index: 10000; left: 50%; transform: translateX(-50%); bottom: 4vh; font-size: 3vw; font-weight: bold; box-shadow: 0 1vh 3vh rgba(0,0,0,0.8); transition: opacity 0.4s; opacity: 0; }
         #toast.show { visibility: visible; opacity: 1; }
-        header { position: fixed; top: 0; left: 0; width: 100%; height: 14vh; padding: 0 4vw; background: transparent; display: flex; align-items: center; justify-content: space-between; z-index: 100; box-sizing: border-box; text-shadow: 2px 2px 8px rgba(0,0,0,1); transition: background 0.3s; pointer-events: none; }
-        header.scrolled { background: transparent; border: none; }
-        .nav-links, .user-info { pointer-events: auto; }
-        .logo { font-size: 2.5vw; font-weight: 900; color: var(--primary); letter-spacing: 2px; }
-        .nav-links { display: flex; gap: 2vw; align-items: center; }
-        .nav-item { background: transparent; border: none; color: white; font-size: 1.5vw; font-weight: 600; opacity: 0.8; cursor: pointer; padding: 0.5vw 1vw; outline: none; border-radius: 5px; transition: 0.3s; text-shadow: 2px 2px 6px black; }
-        .nav-item:focus, .nav-item:hover, .nav-item.active { opacity: 1; transform: scale(1.1); background: rgba(255,255,255,0.15); }
-        .search-box input { background: rgba(255,255,255,0.15); border: 0.1vw solid rgba(255,255,255,0.3); color: white; padding: 0.8vw 1.5vw; border-radius: 30px; font-size: 1.2vw; outline: none; transition: 0.3s; width: 14vw; font-family: inherit; text-shadow: 1px 1px 3px black; }
-        .search-box input:focus { background: rgba(0,0,0,0.9); width: 24vw; border-color: var(--primary); box-shadow: 0 0 1.5vw var(--primary); }
-        .user-info { display: flex; align-items: center; gap: 1vw; font-size: 1.3vw; font-weight: bold; }
-        #main-content { padding-top: 16vh; padding-bottom: 10vh; }
-        .row-container { margin-bottom: 2vh; position: relative; }
-        .row-title { position: relative; z-index: 20; font-size: 1.8vw; font-weight: bold; margin: 0 4vw 0vh 0; opacity: 1; text-shadow: 2px 2px 5px black; pointer-events: none; }
-        .row-inner { display: flex; gap: 1.5vw; overflow-x: auto; padding: 3vh 4vw; margin-top: -1.5vh; margin-bottom: -1.5vh; scroll-behavior: smooth; }
-        .categories-row { display: flex; gap: 1vw; overflow-x: auto; padding: 3vh 4vw; margin-top: -1vh; margin-bottom: -1vh; scroll-behavior: smooth; }
-        .category-chip { background: rgba(255,255,255,0.1); color: white; padding: 1.5vh 2.5vw; border-radius: 30px; font-size: 1.4vw; font-weight: bold; cursor: pointer; border: 0.15vw solid transparent; transition: 0.3s; white-space: nowrap; outline: none; }
-        .category-chip:focus, .category-chip:hover, .category-chip.active { background: var(--primary); border-color: white; transform: scale(1.05); box-shadow: 0 1vh 2vh rgba(0,0,0,0.5); }
-        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(13vw, 1fr)); gap: 1.5vw; padding: 2vh 4vw; margin-bottom: 5vh; }
-        .scroll-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(20,20,20,0.7); color: white; border: 0.1vw solid rgba(255,255,255,0.2); font-size: 2vw; width: 4vw; height: 4vw; border-radius: 50%; cursor: pointer; z-index: 30; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: 0.3s; outline: none; }
-        .scroll-btn:focus, .scroll-btn:hover { background: var(--primary); border-color: white; transform: translateY(-50%) scale(1.1); }
-        .scroll-btn.right { right: 1vw; } .scroll-btn.left { left: 1vw; }
-        .card { border-radius: 0.5vw; position: relative; background: #1a1a1a; cursor: pointer; outline: none; transition: transform 0.3s ease, border 0.3s ease; padding: 0; margin: 0; border: 0.25vw solid transparent; display: block; width: 100%; aspect-ratio: 2 / 3; overflow: hidden; box-shadow: 0 1vh 2vh rgba(0,0,0,0.5); }
-        .row-inner .card { width: var(--card-w); height: var(--card-h); flex: 0 0 auto; }
-        .fallback-text { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; text-align: center; padding: 1vw; font-size: 1.4vw; color: white; background: linear-gradient(45deg, #111, #333); z-index: 1; font-weight: bold; line-height: 1.5; box-sizing: border-box; text-shadow: 2px 2px 4px black; }
-        .card img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 2; transition: opacity 0.3s; }
-        .card-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 4; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 1vw; opacity: 0; transition: opacity 0.3s ease; box-sizing: border-box; }
-        .card:focus .card-overlay, .card:hover .card-overlay { opacity: 1; }
-        .card:focus, .card:hover { transform: scale(1.08); border-color: white; z-index: 15; box-shadow: 0 2vh 4vh rgba(0,0,0,0.9); }
-        .overlay-title { font-size: 1.5vw; font-weight: bold; margin-bottom: 1vh; color: white; text-shadow: 1px 1px 3px black; line-height: 1.2; }
-        .overlay-rating { font-size: 1.2vw; color: gold; font-weight: bold; margin-bottom: 1vh; }
-        .overlay-meta-fetched { font-size: 1.1vw; color: #ccc; font-weight: 600; line-height: 1.6; }
-        .overlay-meta-fetched span { display: block; margin-bottom: 0.5vh; }
-        .live-card { width: 100%; height: auto; background: transparent; border: none; outline: none; cursor: pointer; display: block; text-align: center; transition: 0.3s; }
-        .row-inner .live-card { width: 12vw; flex: 0 0 auto; }
-        .live-img-wrapper { width: 100%; aspect-ratio: 1 / 1; background: #000; border-radius: 0.5vw; position: relative; overflow: hidden; border: 0.25vw solid transparent; transition: 0.3s; box-shadow: 0 1vh 2vh rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; }
-        .live-card:focus .live-img-wrapper, .live-card:hover .live-img-wrapper { transform: scale(1.08); border-color: var(--primary); box-shadow: 0 2vh 4vh rgba(0,0,0,0.9); }
-        .live-img-wrapper img { width: 90%; height: 90%; object-fit: contain; z-index: 2; position: relative; }
-        .live-img-wrapper .fallback-text { background: #111; text-shadow: none; font-size: 1.2vw; padding: 0.5vw; }
-        .live-title { font-size: 1.2vw; margin-top: 1.5vh; font-weight: bold; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 1px 1px 3px black; transition: 0.3s; }
-        .live-card:focus .live-title, .live-card:hover .live-title { color: var(--primary); transform: translateY(-0.5vh); }
-        .progress-bar { position: absolute; bottom: 0; left:0; width: 100%; height: 0.8vh; background: rgba(0,0,0,0.6); z-index: 5; }
+
+        header { position: relative; width: 100%; padding: 4vw; background: rgba(0,0,0,0.8); display: flex; flex-direction: column; align-items: center; gap: 2vh; z-index: 100; box-shadow: 0 2vh 4vh rgba(0,0,0,0.5); }
+        .logo { font-size: 8vw; font-weight: 900; color: var(--primary); letter-spacing: 2px; text-align: center; }
+        .nav-links { display: flex; flex-wrap: wrap; gap: 2vw; justify-content: center; width: 100%; }
+        .nav-item { background: rgba(255,255,255,0.1); border: none; color: white; font-size: 3.5vw; font-weight: 600; cursor: pointer; padding: 1.5vh 3vw; border-radius: 20px; transition: 0.3s; }
+        .nav-item.active { background: var(--primary); }
+        .search-box { width: 100%; margin-top: 1vh; }
+        .search-box input { width: 100%; background: rgba(255,255,255,0.15); border: 0.1vw solid rgba(255,255,255,0.3); color: white; padding: 2vh 4vw; border-radius: 30px; font-size: 4vw; outline: none; text-align: center; }
+        .user-info { font-size: 3vw; color: #ccc; margin-top: 1vh; }
+
+        #main-content { padding-top: 2vh; padding-bottom: 10vh; width: 100vw; }
+        .row-container { margin-bottom: 3vh; width: 100vw; }
+        .row-title { font-size: 5vw; font-weight: bold; margin: 0 4vw 1vh 4vw; }
+        .row-inner { display: flex; gap: 3vw; overflow-x: auto; padding: 1vh 4vw; scroll-behavior: smooth; }
+        .categories-row { display: flex; gap: 2vw; overflow-x: auto; padding: 1vh 4vw; scroll-behavior: smooth; }
+        .category-chip { background: rgba(255,255,255,0.1); color: white; padding: 1.5vh 4vw; border-radius: 30px; font-size: 3.5vw; font-weight: bold; white-space: nowrap; border: none; }
+        .category-chip.active { background: var(--primary); }
+        
+        /* ضبط المقاسات للهاتف */
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(28vw, 1fr)); gap: 3vw; padding: 2vh 4vw; margin-bottom: 5vh; width: 100vw; }
+        
+        .card { border-radius: 2vw; position: relative; background: #1a1a1a; padding: 0; margin: 0; border: none; width: 100%; aspect-ratio: 2 / 3; overflow: hidden; }
+        .row-inner .card { width: 28vw; flex: 0 0 auto; }
+        .card img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 2; }
+        
+        .live-card { width: 100%; text-align: center; background: none; border: none; }
+        .row-inner .live-card { width: 25vw; flex: 0 0 auto; }
+        .live-img-wrapper { width: 100%; aspect-ratio: 1 / 1; background: #000; border-radius: 2vw; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .live-img-wrapper img { width: 90%; height: 90%; object-fit: contain; z-index: 2; }
+        .live-title { font-size: 3vw; margin-top: 1vh; font-weight: bold; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .progress-bar { position: absolute; bottom: 0; left:0; width: 100%; height: 1vh; background: rgba(0,0,0,0.6); z-index: 5; }
         .progress-fill { height: 100%; background: var(--primary); }
-        .load-more-container { text-align: center; padding-bottom: 5vh; grid-column: 1 / -1; }
-        .load-more-btn { background: rgba(40,40,40,0.9); color: white; padding: 2vh 4vw; font-size: 1.5vw; border-radius: 1vw; border: 0.1vw solid rgba(255,255,255,0.2); cursor: pointer; transition: 0.3s; font-weight: bold; outline: none; }
-        .load-more-btn:focus, .load-more-btn:hover { background: var(--primary); border-color: white; transform: scale(1.05); }
-        #details-screen { padding: 6vh 4vw; box-sizing: border-box; background-size: cover; background-position: center; box-shadow: inset 0 0 80vw 60vw rgba(0,0,0,0.98); z-index: 200; }
-        .details-layout { display: flex; gap: 4vw; height: 88vh; align-items: stretch; }
-        .details-poster-col { flex: 0 0 24vw; height: 100%; position: relative; }
-        #detail-poster-wrapper { width: 100%; height: 100%; position: relative; border-radius: 1vw; overflow: hidden; box-shadow: 0 2vh 6vh rgba(0,0,0,0.9); border: 0.1vw solid rgba(255,255,255,0.1); }
-        .details-poster { width: 100%; height: 100%; object-fit: cover; position: relative; z-index: 2; }
-        .details-info-col { flex: 1; display: flex; flex-direction: column; gap: 3vh; padding-top: 1vh; justify-content: flex-start; }
-        .details-title { font-size: 4vw; font-weight: bold; margin: 0; text-shadow: 2px 2px 8px black; line-height: 1.2; }
-        .action-bar { display: flex; gap: 1.5vw; align-items: center; flex-wrap: wrap; }
-        .action-btn { background: var(--text); color: black; border: none; padding: 1.5vh 3vw; font-size: 1.4vw; font-weight: bold; border-radius: 0.5vw; cursor: pointer; outline: none; transition: 0.3s; display: flex; align-items: center; gap: 0.5vw; }
-        .action-btn.fav { background: rgba(50,50,50,0.8); color: white; border: 0.1vw solid white; backdrop-filter: blur(5px); }
-        .action-btn:focus, .action-btn:hover { transform: scale(1.05); background: var(--primary); color: white; border-color: var(--primary); }
-        .seasons-select { background: rgba(30,30,30,0.85); color: white; padding: 1.5vh 2vw; font-size: 1.4vw; border: 0.1vw solid white; border-radius: 0.5vw; outline: none; cursor: pointer; }
-        .seasons-select:focus { border-color: var(--primary); background: #000; }
-        .details-meta { font-size: 1.3vw; color: #ccc; font-weight: 600; display: flex; gap: 1.5vw; text-shadow: 1px 1px 3px black; background: rgba(255,255,255,0.05); padding: 1vh 1.5vw; border-radius: 0.5vw; width: fit-content; }
-        .details-desc { font-size: 1.3vw; line-height: 1.8; opacity: 0.85; text-shadow: 1px 1px 3px black; max-width: 95%; margin: 0; }
-        .details-episodes-col { flex: 0 0 26vw; height: 100%; overflow-y: auto; overflow-x: visible; padding: 1vh 2vw 5vh 2vw; margin-left: -2vw; scrollbar-width: none; }
-        .episodes-list-vertical { display: flex; flex-direction: column; gap: 1.5vh; }
-        .ep-card { position: relative; background: rgba(35,35,35,0.85); padding: 2vh; border-radius: 0.5vw; cursor: pointer; outline: none; transition: 0.3s; display: flex; justify-content: space-between; align-items: center; border: 0.1vw solid transparent; color: white; font-size: 1.2vw; overflow: hidden; }
-        .ep-card:focus, .ep-card:hover { background: var(--text); color: black; transform: scale(1.05); border-color: white; z-index: 10; }
-        .ep-progress { position: absolute; bottom: 0; left: 0; width: 100%; height: 0.6vh; background: rgba(0,0,0,0.4); }
-        .ep-progress-fill { height: 100%; background: var(--primary); }
-        #login-screen { display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%); z-index: 500; }
-        .login-wrapper { background: rgba(0, 0, 0, 0.7); padding: 4vw 6vw; border-radius: 1vw; box-shadow: 0 2vh 6vh rgba(0,0,0,0.9); text-align: center; border: 0.1vw solid rgba(255,255,255,0.05); backdrop-filter: blur(20px); max-width: 45vw; width: 100%; }
-        .login-logo { color: var(--primary); font-size: 4vw; font-weight: 900; letter-spacing: 4px; margin: 0 0 1vh 0; text-shadow: 0 0 2vw rgba(229,9,20,0.4); }
-        .login-title { font-size: 2vw; color: white; margin: 0 0 1vh 0; }
-        .login-subtitle { font-size: 1.2vw; color: #aaa; margin: 0 0 4vh 0; }
+
+        .load-more-container { text-align: center; padding-bottom: 5vh; width: 100%; }
+        .load-more-btn { background: rgba(40,40,40,0.9); color: white; padding: 2vh 6vw; font-size: 4vw; border-radius: 2vw; border: 1px solid rgba(255,255,255,0.2); font-weight: bold; }
+
+        /* شاشة التفاصيل للآيفون */
+        #details-screen { padding: 4vh 4vw; background-size: cover; background-position: center; box-shadow: inset 0 0 80vw 60vw rgba(0,0,0,0.95); }
+        .details-layout { display: flex; flex-direction: column; gap: 3vh; align-items: center; width: 100%; }
+        .details-poster-col { width: 50vw; aspect-ratio: 2/3; border-radius: 3vw; overflow: hidden; box-shadow: 0 2vh 6vh rgba(0,0,0,0.9); }
+        .details-poster { width: 100%; height: 100%; object-fit: cover; }
+        .details-info-col { width: 100%; text-align: center; display: flex; flex-direction: column; gap: 2vh; }
+        .details-title { font-size: 7vw; font-weight: bold; margin: 0; }
+        .details-meta { font-size: 3vw; color: #ccc; display: flex; flex-wrap: wrap; justify-content: center; gap: 2vw; background: rgba(255,255,255,0.1); padding: 1.5vh; border-radius: 2vw; }
+        .action-bar { display: flex; flex-direction: column; gap: 2vh; width: 100%; }
+        .action-btn { background: white; color: black; border: none; padding: 2vh; font-size: 4vw; font-weight: bold; border-radius: 2vw; width: 100%; text-align: center; }
+        .action-btn.fav { background: rgba(50,50,50,0.8); color: white; border: 1px solid white; }
+        .seasons-select { background: rgba(30,30,30,0.85); color: white; padding: 2vh; font-size: 4vw; border-radius: 2vw; width: 100%; }
+        .details-desc { font-size: 3.5vw; line-height: 1.6; opacity: 0.9; text-align: justify; }
+        .details-episodes-col { width: 100%; }
+        .episodes-list-vertical { display: flex; flex-direction: column; gap: 2vh; }
+        .ep-card { background: rgba(35,35,35,0.85); padding: 2.5vh 4vw; border-radius: 2vw; display: flex; justify-content: space-between; align-items: center; color: white; font-size: 4vw; position: relative; overflow: hidden; border: none; }
+
+        /* شاشات الدخول */
+        #login-screen, #profiles-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg); }
+        .login-wrapper { background: rgba(20, 20, 20, 0.9); padding: 6vw; border-radius: 4vw; text-align: center; width: 90vw; max-width: 400px; box-shadow: 0 1vh 3vh rgba(0,0,0,0.5); }
+        .login-logo { color: var(--primary); font-size: 10vw; font-weight: 900; margin: 0 0 2vh 0; }
+        .login-title { font-size: 6vw; color: white; margin: 0 0 1vh 0; }
+        .login-subtitle { font-size: 3.5vw; color: #aaa; margin: 0 0 4vh 0; }
         .login-form { display: flex; flex-direction: column; gap: 2.5vh; }
-        .login-form input { background: rgba(255,255,255,0.08); border: 0.1vw solid rgba(255,255,255,0.15); color: white; padding: 1.5vw; border-radius: 0.5vw; font-size: 1.3vw; outline: none; transition: 0.3s; font-family: inherit; }
-        .login-form input:focus { background: rgba(0,0,0,0.8); border-color: var(--primary); box-shadow: 0 0 1.5vw rgba(229, 9, 20, 0.4); transform: scale(1.02); }
-        .login-btn { background: var(--primary); color: white; border: none; padding: 1.5vw; font-size: 1.5vw; border-radius: 0.5vw; cursor: pointer; font-weight: bold; transition: 0.3s; margin-top: 1vh; outline: none; }
-        .login-btn:focus, .login-btn:hover { transform: scale(1.05); box-shadow: 0 1vh 3vh rgba(229, 9, 20, 0.6); border: 0.15vw solid white; }
-        #profiles-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 500; background: var(--bg); }
-        .profiles-container { display: flex; gap: 3vw; margin-top: 5vh; flex-wrap: wrap; justify-content: center; }
-        .profile-card { width: 12vw; height: 12vw; background: #222; border-radius: 1vw; display: flex; align-items: center; justify-content: center; font-size: 2.5vw; font-weight: bold; cursor: pointer; outline: none; transition: 0.3s; border: 0.2vw solid transparent; color: white; box-shadow: 0 1vh 2vh rgba(0,0,0,0.5); }
-        .profile-card:focus, .profile-card:hover { background: var(--text); color: black; transform: scale(1.1); border-color: var(--primary); box-shadow: 0 2vh 4vh rgba(0,0,0,0.8); }
-        #add-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); z-index: 1000; display: flex; justify-content: center; align-items: center; }
-        .modal-box { background: #1a1a1a; padding: 4vw; border-radius: 1vw; text-align: center; border: 0.1vw solid #444; }
-        .modal-box input { width: 20vw; padding: 1.5vw; font-size: 1.5vw; margin: 2vw 0; border-radius: 5px; border: none; outline: none; text-align: center; }
+        .login-form input { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 4vw; border-radius: 2vw; font-size: 4vw; outline: none; text-align: center; }
+        .login-btn { background: var(--primary); color: white; border: none; padding: 4vw; font-size: 4.5vw; border-radius: 2vw; font-weight: bold; margin-top: 2vh; }
+        
+        .profiles-container { display: flex; gap: 4vw; flex-wrap: wrap; justify-content: center; margin-top: 4vh; }
+        .profile-card { width: 25vw; height: 25vw; background: #222; border-radius: 3vw; display: flex; align-items: center; justify-content: center; font-size: 5vw; font-weight: bold; color: white; border: none; }
+        .modal-box { background: #1a1a1a; padding: 6vw; border-radius: 4vw; text-align: center; width: 90vw; }
+        .modal-box input { width: 100%; padding: 4vw; font-size: 4vw; margin: 3vh 0; border-radius: 2vw; border: none; text-align: center; }
     </style>
 </head>
 <body>
@@ -106,32 +95,33 @@
         <div class="login-wrapper">
             <h1 class="login-logo">STREAM</h1>
             <h2 class="login-title">تسجيل الدخول</h2>
-            <p class="login-subtitle">الرجاء إدخال بيانات اشتراك الـ IPTV الخاص بك للبدء</p>
+            <p class="login-subtitle">أدخل بيانات الـ IPTV الخاص بك</p>
             <div class="login-form">
-                <input type="text" id="iptv-domain" class="focusable" tabindex="0" placeholder="رابط السيرفر (مثال: iptv-provider.com:8080)">
-                <input type="text" id="iptv-user" class="focusable" tabindex="0" placeholder="اسم المستخدم">
-                <input type="password" id="iptv-pass" class="focusable" tabindex="0" placeholder="كلمة المرور">
-                <button id="login-btn" class="login-btn focusable" tabindex="0" onclick="login()">دخول</button>
+                <input type="text" id="iptv-domain" placeholder="رابط السيرفر (مثال: http://domain.com:80)">
+                <input type="text" id="iptv-user" placeholder="اسم المستخدم">
+                <input type="password" id="iptv-pass" placeholder="كلمة المرور">
+                <button id="login-btn" class="login-btn" onclick="login()">دخول</button>
             </div>
         </div>
     </div>
 
-    <div id="add-modal" class="hidden">
+    <div id="add-modal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); z-index: 1000; display: flex; justify-content: center; align-items: center;">
         <div class="modal-box">
-            <h2 style="margin:0;">اسم المستخدم الجديد</h2>
-            <input type="text" id="new-profile-input" class="focusable" tabindex="0" placeholder="اكتب الاسم هنا...">
-            <br>
-            <button class="action-btn focusable" tabindex="0" onclick="saveNewProfile()">حفظ وإنشاء</button>
-            <button class="action-btn fav focusable" tabindex="0" onclick="document.getElementById('add-modal').classList.add('hidden')">إلغاء</button>
+            <h2 style="color:white; font-size: 5vw;">اسم المستخدم الجديد</h2>
+            <input type="text" id="new-profile-input" placeholder="اكتب الاسم...">
+            <div style="display: flex; flex-direction: column; gap: 2vh;">
+                <button class="action-btn" onclick="saveNewProfile()">حفظ وإنشاء</button>
+                <button class="action-btn fav" onclick="document.getElementById('add-modal').classList.add('hidden')">إلغاء</button>
+            </div>
         </div>
     </div>
 
     <div id="profiles-screen" class="scrollable-screen hidden">
-        <h1 style="font-size: 3.5vw; text-shadow: 2px 2px 5px black;">من يشاهد الآن؟</h1>
+        <h1 style="font-size: 6vw; margin-top: 10vh; color:white;">من يشاهد الآن؟</h1>
         <div class="profiles-container" id="profiles-list"></div>
-        <div style="display: flex; gap: 2vw; margin-top: 6vh;">
-            <button class="action-btn focusable" tabindex="0" onclick="openAddProfileModal()">+ إضافة مستخدم</button>
-            <button class="action-btn fav focusable" tabindex="0" onclick="logout()">تسجيل الخروج</button>
+        <div style="display: flex; flex-direction: column; gap: 2vh; margin-top: 8vh; width: 80vw;">
+            <button class="action-btn" onclick="openAddProfileModal()">+ إضافة مستخدم</button>
+            <button class="action-btn fav" onclick="logout()">تسجيل الخروج</button>
         </div>
     </div>
 
@@ -139,17 +129,17 @@
         <header id="main-header">
             <div class="logo">STREAM</div>
             <div class="nav-links">
-                <button class="nav-item active focusable" tabindex="0" onclick="loadPage('movies')">الأفلام</button>
-                <button class="nav-item focusable" tabindex="0" onclick="loadPage('series')">المسلسلات</button>
-                <button class="nav-item focusable" tabindex="0" onclick="loadPage('live')">القنوات</button>
-                <button class="nav-item focusable" tabindex="0" onclick="loadPage('favorites')">مفضلاتي</button>
-                <div class="search-box">
-                    <input type="text" id="search-input" class="focusable" tabindex="0" placeholder="🔍 بحث عالمي..." onkeyup="handleSearch()">
-                </div>
+                <button class="nav-item active" onclick="loadPage('movies')">أفلام</button>
+                <button class="nav-item" onclick="loadPage('series')">مسلسلات</button>
+                <button class="nav-item" onclick="loadPage('live')">بث مباشر</button>
+                <button class="nav-item" onclick="loadPage('favorites')">مفضلاتي</button>
+            </div>
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="🔍 ابحث هنا..." onkeyup="handleSearch()">
             </div>
             <div class="user-info">
-                <span id="current-profile-name"></span>
-                <button class="nav-item focusable" tabindex="0" style="font-size: 1.2vw;" onclick="changeProfile()">تبديل</button>
+                المستخدم: <span id="current-profile-name"></span>
+                <span style="color: var(--primary); margin-right: 2vw; font-weight: bold;" onclick="changeProfile()">[تبديل]</span>
             </div>
         </header>
 
@@ -164,24 +154,21 @@
     <div id="details-screen" class="scrollable-screen hidden">
         <div class="details-layout" id="details-layout-container">
             <div class="details-poster-col">
-                <div id="detail-poster-wrapper">
-                    <div class="fallback-text" id="detail-fallback-text"></div>
-                    <img id="detail-poster" class="details-poster" src="" onerror="this.style.opacity=0; document.getElementById('detail-fallback-text').style.opacity=1;" onload="this.style.opacity=1; document.getElementById('detail-fallback-text').style.opacity=0;">
-                    <div id="detail-progress-container" class="progress-bar hidden"><div id="detail-progress-fill" class="progress-fill"></div></div>
-                </div>
+                <img id="detail-poster" class="details-poster" src="">
+                <div id="detail-progress-container" class="progress-bar hidden"><div id="detail-progress-fill" class="progress-fill"></div></div>
             </div>
             <div class="details-info-col">
                 <h1 id="detail-title" class="details-title"></h1>
-                <div class="action-bar" id="detail-actions"></div>
                 <div class="details-meta" id="detail-meta"></div>
+                <div class="action-bar" id="detail-actions"></div>
                 <p class="details-desc" id="detail-desc"></p>
             </div>
             <div class="details-episodes-col hidden" id="series-episodes-col">
                 <div id="episodes-container" class="episodes-list-vertical"></div>
             </div>
+            <button class="action-btn" style="background: rgba(255,255,255,0.2); color:white; margin-top: 2vh;" onclick="history.back()">رجوع</button>
         </div>
     </div>
-
 
 <script>
     const supabaseUrl = 'https://kpfymvtyqbyjmlqfgujo.supabase.co';
@@ -193,7 +180,6 @@
     let currentTab = 'movies'; 
     let activeStreamData = null; 
     let searchTimeout = null;
-
     let flatEpisodes = [];
     let currentCategoryItems = [];
     let displayedItemsCount = 0;
@@ -205,24 +191,9 @@
         setTimeout(() => t.classList.remove('show'), 4000);
     }
 
-    function safeFocus(el) {
-        if(document.activeElement.tagName !== 'INPUT') { el.focus(); }
-    }
-
-    function autoFocusFirstElement() {
-        setTimeout(() => {
-            const currentScreen = document.querySelector('.scrollable-screen:not(.hidden)');
-            if(currentScreen && document.activeElement.tagName !== 'INPUT') {
-                const firstObj = currentScreen.querySelector('.focusable');
-                if(firstObj) firstObj.focus();
-            }
-        }, 300);
-    }
-
-    // 🔥 التقنية الجديدة: استقبال الرسائل من التطبيق كنفق بيانات آمن (يمنع التجمد)
+    // 💡 الجسر السليم لاستقبال البيانات من التطبيق
     window.pendingFetches = {};
-
-    const handleNativeMessage = (event) => {
+    window.handleNativeMessage = function(event) {
         try {
             const msg = JSON.parse(event.data);
             if (msg.type === 'PROXY_RESPONSE') {
@@ -231,22 +202,16 @@
                     if (msg.error) {
                         pending.reject(new Error(msg.error));
                     } else {
-                        // تحويل النص المستلم إلى كائن JSON
                         pending.resolve(JSON.parse(msg.data));
                     }
                     delete window.pendingFetches[msg.reqId];
                 }
             }
         } catch (e) {
-            console.error("خطأ في قراءة بيانات التطبيق", e);
+            console.error("Bridge parse error", e);
         }
     };
 
-    // الاستماع لرسائل التطبيق
-    window.addEventListener('message', handleNativeMessage);
-    document.addEventListener('message', handleNativeMessage);
-
-    // دالة الإرسال 
     async function apiFetch(action, extraParams = '') {
         let domain = iptv.domain || document.getElementById('iptv-domain').value.trim();
         let user = iptv.user || document.getElementById('iptv-user').value.trim();
@@ -266,21 +231,17 @@
                 const reqId = Math.random().toString(36).substring(7);
                 window.pendingFetches[reqId] = { resolve, reject };
                 
-                // مؤقت الأمان لمنع التعليق
                 setTimeout(() => {
                     if (window.pendingFetches[reqId]) {
-                        window.pendingFetches[reqId].reject(new Error('السيرفر لا يستجيب، تأكد من الرابط'));
+                        window.pendingFetches[reqId].reject(new Error('انتهى وقت الطلب (تأكد من الرابط)'));
                         delete window.pendingFetches[reqId];
                     }
                 }, 15000);
 
                 window.ReactNativeWebView.postMessage(JSON.stringify({
-                    type: 'PROXY_FETCH',
-                    url: url,
-                    reqId: reqId
+                    type: 'PROXY_FETCH', url: url, reqId: reqId
                 }));
             } else {
-                // متصفح الكمبيوتر العادي
                 fetch(url).then(r => r.json()).then(resolve).catch(reject);
             }
         });
@@ -290,8 +251,6 @@
         if(localStorage.getItem('iptv_user')) {
             iptv = { domain: localStorage.getItem('iptv_domain'), user: localStorage.getItem('iptv_user'), pass: localStorage.getItem('iptv_pass') };
             fetchProfilesFromSupabase();
-        } else {
-            autoFocusFirstElement();
         }
     };
 
@@ -301,7 +260,7 @@
         const p = document.getElementById('iptv-pass').value.trim();
         const btn = document.getElementById('login-btn');
 
-        if(!d || !u || !p) { showToast('الرجاء إدخال جميع البيانات'); return; }
+        if(!d || !u || !p) { showToast('أدخل جميع البيانات'); return; }
         
         btn.innerText = 'جاري التحقق...'; btn.disabled = true;
 
@@ -318,15 +277,14 @@
                 localStorage.setItem('iptv_user', u); 
                 localStorage.setItem('iptv_pass', p);
                 
-                showToast('✅ تم الاتصال بنجاح');
+                showToast('✅ تم تسجيل الدخول');
                 btn.innerText = 'دخول'; btn.disabled = false;
                 fetchProfilesFromSupabase();
             } else { 
-                throw new Error('بيانات الدخول غير صحيحة'); 
+                throw new Error('البيانات غير صحيحة'); 
             }
         } catch (e) {
-            // الآن الإشعارات ستظهر بنجاح ولن يعلق الزر
-            showToast('❌ ' + (e.message || 'فشل الاتصال: تأكد من الرابط أو البيانات'));
+            showToast('❌ ' + (e.message || 'فشل الاتصال'));
             btn.innerText = 'دخول'; btn.disabled = false;
             iptv = { domain: '', user: '', pass: '' };
         }
@@ -343,7 +301,7 @@
         document.getElementById('profiles-screen').classList.remove('hidden');
         
         const container = document.getElementById('profiles-list');
-        container.innerHTML = '<h2 style="color:white; grid-column: 1/-1;">جاري جلب المستخدمين...</h2>';
+        container.innerHTML = '<h3 style="color:white; width:100%; text-align:center;">جاري الجلب...</h3>';
         try {
             const { data, error } = await supabaseClient.from('profiles').select('profile_name').eq('username', iptv.user);
             if(error) throw error; container.innerHTML = '';
@@ -351,31 +309,28 @@
             if(data && data.length > 0) {
                 data.forEach(p => renderProfileCard(p.profile_name));
             } else {
-                await supabaseClient.from('profiles').insert([{ username: iptv.user, profile_name: 'العائلة' }]);
-                renderProfileCard('العائلة');
+                await supabaseClient.from('profiles').insert([{ username: iptv.user, profile_name: 'الرئيسي' }]);
+                renderProfileCard('الرئيسي');
             }
-            autoFocusFirstElement();
-        } catch (e) { container.innerHTML = '<h2 style="color:var(--primary); grid-column: 1/-1;">خطأ في الاتصال بقاعدة البيانات</h2>'; }
+        } catch (e) { container.innerHTML = '<h3 style="color:var(--primary); width:100%; text-align:center;">خطأ بالشبكة</h3>'; }
     }
 
     function renderProfileCard(name) {
         const card = document.createElement('button');
-        card.className = 'profile-card focusable'; card.tabIndex = 0; card.innerText = name; card.onclick = () => selectProfile(name);
-        card.addEventListener('mouseenter', (e) => safeFocus(e.target));
+        card.className = 'profile-card'; card.innerText = name; card.onclick = () => selectProfile(name);
         document.getElementById('profiles-list').appendChild(card);
     }
 
     function openAddProfileModal() {
         document.getElementById('new-profile-input').value = '';
         document.getElementById('add-modal').classList.remove('hidden');
-        setTimeout(() => document.getElementById('new-profile-input').focus(), 100);
     }
 
     async function saveNewProfile() {
         let name = document.getElementById('new-profile-input').value.trim();
         if(name) {
             document.getElementById('add-modal').classList.add('hidden');
-            document.getElementById('profiles-list').innerHTML = '<h2 style="color:white; grid-column: 1/-1;">جاري الحفظ...</h2>';
+            document.getElementById('profiles-list').innerHTML = '<h3 style="color:white; width:100%; text-align:center;">جاري الحفظ...</h3>';
             await supabaseClient.from('profiles').upsert({ username: iptv.user, profile_name: name }, { onConflict: 'username,profile_name' });
             fetchProfilesFromSupabase();
         }
@@ -399,7 +354,7 @@
             
             document.getElementById('continue-watching-container').innerHTML = ''; 
             document.getElementById('categories-container').innerHTML = ''; 
-            document.getElementById('grid-container').innerHTML = '<h2 style="padding:5vw; grid-column: 1 / -1; text-align:center;">🔍 جاري البحث...</h2>';
+            document.getElementById('grid-container').innerHTML = '<h3 style="padding:5vw; width:100%; text-align:center;">🔍 جاري البحث...</h3>';
             document.getElementById('load-more-container').innerHTML = '';
 
             let action = currentTab === 'movies' ? 'get_vod_streams' : (currentTab === 'series' ? 'get_series' : 'get_live_streams');
@@ -411,8 +366,8 @@
                 displayedItemsCount = 0;
                 
                 if(currentCategoryItems.length > 0) renderGridItems(currentTab === 'movies' ? 'movie' : (currentTab === 'series' ? 'series' : 'live'));
-                else document.getElementById('grid-container').innerHTML = '<h2 style="padding:5vw; grid-column: 1 / -1; text-align:center;">❌ لم نجد نتائج.</h2>';
-            } catch (e) { document.getElementById('grid-container').innerHTML = '<h2 style="padding:5vw; grid-column: 1 / -1; text-align:center;">خطأ في البحث.</h2>'; }
+                else document.getElementById('grid-container').innerHTML = '<h3 style="padding:5vw; width:100%; text-align:center;">❌ لا يوجد نتائج</h3>';
+            } catch (e) { document.getElementById('grid-container').innerHTML = '<h3 style="padding:5vw; width:100%; text-align:center;">خطأ</h3>'; }
         }, 800);
     }
 
@@ -423,7 +378,7 @@
         document.getElementById('search-input').value = '';
 
         document.getElementById('continue-watching-container').innerHTML = ''; 
-        document.getElementById('categories-container').innerHTML = '<h2 style="padding:4vw;">جاري تحميل التصنيفات...</h2>';
+        document.getElementById('categories-container').innerHTML = '<h3 style="padding:4vw; text-align:center;">جاري التحميل...</h3>';
         document.getElementById('grid-container').innerHTML = '';
         document.getElementById('load-more-container').innerHTML = '';
 
@@ -437,27 +392,21 @@
             await fetchCategories('get_live_categories', 'live');
         } else if (type === 'favorites') {
             document.getElementById('categories-container').innerHTML = '';
-            await loadSupabaseRows('favorites', `مفضلاتي الشاملة`, null);
+            await loadSupabaseRows('favorites', `المفضلة`, null);
         }
-        autoFocusFirstElement();
     }
 
     async function fetchCategories(catAction, itemType) {
         try {
             const cats = await apiFetch(catAction);
             let html = `
-            <div class="row-container" style="margin-bottom: 3vh;">
-                <button class="scroll-btn right focusable" tabindex="0" onclick="document.getElementById('cat-row-inner').scrollBy({left: 800, behavior: 'smooth'})">▶</button>
-                <div class="categories-row" id="cat-row-inner">`;
+            <div class="row-container">
+                <div class="categories-row">`;
                 
             cats.forEach((cat, index) => {
-                html += `<button class="category-chip focusable ${index === 0 ? 'active' : ''}" tabindex="0" data-id="${cat.category_id}">${cat.category_name}</button>`;
+                html += `<button class="category-chip ${index === 0 ? 'active' : ''}" data-id="${cat.category_id}">${cat.category_name}</button>`;
             });
-            
-            html += `</div>
-                <button class="scroll-btn left focusable" tabindex="0" onclick="document.getElementById('cat-row-inner').scrollBy({left: -800, behavior: 'smooth'})">◀</button>
-            </div>`;
-            
+            html += `</div></div>`;
             document.getElementById('categories-container').innerHTML = html;
 
             const chips = document.querySelectorAll('.category-chip');
@@ -467,39 +416,35 @@
                     let streamAction = itemType === 'movie' ? 'get_vod_streams' : (itemType === 'series' ? 'get_series' : 'get_live_streams');
                     loadCategoryItems(chip.getAttribute('data-id'), streamAction, itemType);
                 };
-                chip.addEventListener('mouseenter', (e) => safeFocus(e.target));
             });
 
             if(cats.length > 0) {
                 let streamAction = itemType === 'movie' ? 'get_vod_streams' : (itemType === 'series' ? 'get_series' : 'get_live_streams');
                 loadCategoryItems(cats[0].category_id, streamAction, itemType);
             }
-        } catch (e) { document.getElementById('categories-container').innerHTML = '<h2 style="padding:4vw;">خطأ في جلب التصنيفات</h2>'; }
+        } catch (e) { document.getElementById('categories-container').innerHTML = '<h3 style="padding:4vw; text-align:center;">خطأ في جلب التصنيفات</h3>'; }
     }
 
     async function loadCategoryItems(catId, streamAction, itemType) {
-        document.getElementById('grid-container').innerHTML = '<h2 style="padding:4vw; grid-column: 1 / -1; text-align:center;">جاري تحميل المكتبة...</h2>';
+        document.getElementById('grid-container').innerHTML = '<h3 style="padding:4vw; width:100%; text-align:center;">جاري تحميل المكتبة...</h3>';
         document.getElementById('load-more-container').innerHTML = '';
         try {
             currentCategoryItems = await apiFetch(streamAction, `&category_id=${catId}`);
             displayedItemsCount = 0;
             document.getElementById('grid-container').innerHTML = '';
             if(currentCategoryItems.length > 0) renderGridItems(itemType);
-            else document.getElementById('grid-container').innerHTML = '<h2 style="padding:4vw; grid-column: 1 / -1; text-align:center;">هذا التصنيف فارغ.</h2>';
-        } catch(e) { document.getElementById('grid-container').innerHTML = '<h2 style="padding:4vw; grid-column: 1 / -1; text-align:center;">خطأ في السيرفر.</h2>'; }
+            else document.getElementById('grid-container').innerHTML = '<h3 style="padding:4vw; width:100%; text-align:center;">التصنيف فارغ</h3>';
+        } catch(e) { document.getElementById('grid-container').innerHTML = '<h3 style="padding:4vw; width:100%; text-align:center;">خطأ بالسيرفر</h3>'; }
     }
 
     function createCardHtml(item, type, resumeTime = 0) {
         const title = item.name || item.title || 'بدون اسم';
         const imgUrl = item.stream_icon || item.cover || '';
-        const rating = item.rating ? `⭐ ${item.rating}` : '';
-        const year = item.year || item.releaseDate || item.releasedate || '';
         
         if (type === 'live') {
             return `
                 <div class="live-img-wrapper">
-                    <div class="fallback-text" style="display:flex;">${title}</div>
-                    <img src="${imgUrl}" style="opacity:0;" onload="this.previousElementSibling.style.display='none'; this.style.opacity=1;" onerror="this.previousElementSibling.style.display='flex'; this.style.opacity=0;">
+                    <img src="${imgUrl}" onerror="this.style.display='none';">
                 </div>
                 <div class="live-title">${title}</div>
             `;
@@ -510,60 +455,10 @@
                 progressHtml = `<div class="progress-bar"><div class="progress-fill" style="width: ${progress}%"></div></div>`;
             }
             return `
-                <div class="fallback-text" style="display:flex;">${title}</div>
-                <img src="${imgUrl}" style="opacity:0;" onload="this.previousElementSibling.style.display='none'; this.style.opacity=1;" onerror="this.previousElementSibling.style.display='flex'; this.style.opacity=0;">
-                <div class="card-overlay">
-                    <div class="overlay-title">${title}</div>
-                    <div class="overlay-meta-fetched">
-                        ${year ? `<span>📅 ${year}</span>` : ''}
-                        ${rating ? `<span>${rating}</span>` : ''}
-                        <div class="dynamic-meta"></div>
-                    </div>
-                </div>
+                <img src="${imgUrl}" onerror="this.style.display='none';">
                 ${progressHtml}
             `;
         }
-    }
-
-    function attachHoverEvents(card, item, type) {
-        const handleFocus = () => {
-            card.scrollIntoView({ behavior: "smooth", inline: "center", block: "center" });
-            if(type === 'live') return;
-            
-            const dynamicMeta = card.querySelector('.dynamic-meta');
-            if(dynamicMeta && !card.dataset.fetched && !card.dataset.fetching) {
-                card.dataset.fetching = "true";
-                const id = item.stream_id || item.series_id || item.id || item.movie_id;
-                
-                let baseAction = type === 'movie' ? 'get_vod_info' : 'get_series_info';
-                let extraParams = type === 'movie' ? `&vod_id=${id}` : `&series_id=${id}`;
-                
-                apiFetch(baseAction, extraParams)
-                .then(data => {
-                    const info = data.info || {};
-                    let genre = info.genre ? info.genre.split(',')[0] : (item.genre || '');
-                    let durationOrEps = '';
-                    if(type === 'movie') { durationOrEps = info.duration || info.runtime || ''; } 
-                    else if (type === 'series') {
-                        if(data.episodes) {
-                            let seasonsCount = Object.keys(data.episodes).length;
-                            if(seasonsCount > 1) durationOrEps = `${seasonsCount} مواسم`;
-                            else if(seasonsCount === 1) durationOrEps = `${data.episodes[Object.keys(data.episodes)[0]].length} حلقة`;
-                        }
-                    }
-                    let html = '';
-                    if(genre) html += `<span>🎬 ${genre}</span>`;
-                    if(durationOrEps) html += `<span>⏱ ${durationOrEps}</span>`;
-                    dynamicMeta.innerHTML = html; card.dataset.fetched = "true";
-                }).catch(() => { card.dataset.fetching = ""; });
-            }
-        };
-        
-        card.addEventListener('focus', handleFocus);
-        card.addEventListener('mouseenter', (e) => {
-            safeFocus(card);
-            if(document.activeElement.tagName === 'INPUT') handleFocus(); 
-        });
     }
 
     function renderGridItems(type, append = false) {
@@ -574,11 +469,8 @@
         
         nextBatch.forEach(item => {
             const card = document.createElement('button');
-            card.className = type === 'live' ? 'live-card focusable' : 'card focusable';
-            card.tabIndex = 0; card.setAttribute('data-title', (item.name || item.title || '').toLowerCase());
-            
+            card.className = type === 'live' ? 'live-card' : 'card';
             card.innerHTML = createCardHtml(item, type);
-            attachHoverEvents(card, item, type);
             
             card.onclick = () => {
                 if (type === 'live') {
@@ -594,17 +486,11 @@
         if (displayedItemsCount < currentCategoryItems.length) {
             loadMoreContainer.innerHTML = '';
             const loadBtn = document.createElement('button');
-            loadBtn.className = 'load-more-btn focusable';
-            loadBtn.tabIndex = 0;
-            loadBtn.innerText = 'تحميل 50 عنصر إضافي ↓';
-            loadBtn.onclick = () => loadMoreItems(type);
-            loadBtn.addEventListener('mouseenter', (e) => safeFocus(e.target));
+            loadBtn.className = 'load-more-btn';
+            loadBtn.innerText = 'تحميل المزيد ↓';
+            loadBtn.onclick = () => renderGridItems(type, true);
             loadMoreContainer.appendChild(loadBtn);
         } else { loadMoreContainer.innerHTML = ''; }
-    }
-
-    function loadMoreItems(type) {
-        renderGridItems(type, true);
     }
 
     async function loadSupabaseRows(tableName, rowTitle, filterType) {
@@ -619,13 +505,8 @@
 
             if(data && data.length > 0) {
                 const wrapper = document.createElement('div'); wrapper.className = 'row-container';
-                const btnRight = document.createElement('button'); btnRight.className = 'scroll-btn right focusable'; btnRight.tabIndex = 0; btnRight.innerHTML = '▶';
-                const btnLeft = document.createElement('button'); btnLeft.className = 'scroll-btn left focusable'; btnLeft.tabIndex = 0; btnLeft.innerHTML = '◀';
-                
                 wrapper.innerHTML = `<div class="row-title">${rowTitle}</div>`;
                 const inner = document.createElement('div'); inner.className = 'row-inner';
-                btnRight.onclick = () => inner.scrollBy({ left: 800, behavior: 'smooth' });
-                btnLeft.onclick = () => inner.scrollBy({ left: -800, behavior: 'smooth' });
 
                 data.forEach(row => {
                     let obj = row.item_data;
@@ -634,31 +515,24 @@
 
                     const isLive = row.item_type === 'live';
                     const card = document.createElement('button');
-                    card.className = isLive ? 'live-card focusable' : 'card focusable';
-                    card.tabIndex = 0; card.setAttribute('data-title', (obj.name || obj.title || '').toLowerCase());
-                    
+                    card.className = isLive ? 'live-card' : 'card';
                     card.innerHTML = createCardHtml(obj, row.item_type, tableName === 'user_activity' ? row.resume_time : 0);
-                    attachHoverEvents(card, obj, row.item_type);
                     
                     card.onclick = () => {
                         if (isLive) {
                             activeStreamData = { id: obj.stream_id || obj.id, type: 'live', name: obj.name };
                             playStream(activeStreamData.id, 'live', '');
                         } else {
-                            activeStreamData = { 
-                                ...obj, type: row.item_type, id: row.movie_id || row.item_id, resume_time: row.resume_time,
-                                current_episode_id: obj.current_episode_id || null, current_episode_num: obj.current_episode_num || null,
-                                current_episode_ext: obj.current_episode_ext || 'mkv'
-                            };
+                            activeStreamData = { ...obj, type: row.item_type, id: row.movie_id || row.item_id, resume_time: row.resume_time, current_episode_id: obj.current_episode_id || null, current_episode_num: obj.current_episode_num || null, current_episode_ext: obj.current_episode_ext || 'mkv' };
                             openDetails(obj, row.item_type);
                         }
                     };
                     inner.appendChild(card);
                 });
-                wrapper.appendChild(btnRight); wrapper.appendChild(inner); wrapper.appendChild(btnLeft);
+                wrapper.appendChild(inner);
                 container.appendChild(wrapper);
             }
-        } catch(e) { console.error(e); }
+        } catch(e) {}
     }
 
     async function openDetails(item, type) {
@@ -678,11 +552,9 @@
             } else { activeStreamData = { ...item, type, id, resume_time: 0 }; }
         } catch (err) { activeStreamData = { ...item, type, id, resume_time: 0 }; }
 
-        const title = item.name || item.title || 'بدون اسم';
-        document.getElementById('detail-title').innerText = title;
-        document.getElementById('detail-fallback-text').innerText = title;
+        document.getElementById('detail-title').innerText = item.name || item.title || 'بدون اسم';
         document.getElementById('detail-poster').src = item.stream_icon || item.cover;
-        document.getElementById('details-screen').style.backgroundImage = `linear-gradient(to right, rgba(10,10,10,1) 40%, rgba(10,10,10,0.85) 100%), url('${item.stream_icon || item.cover}')`;
+        document.getElementById('details-screen').style.backgroundImage = `linear-gradient(to right, rgba(10,10,10,1) 10%, rgba(10,10,10,0.85) 100%), url('${item.stream_icon || item.cover}')`;
 
         let baseAction = type === 'movie' ? 'get_vod_info' : 'get_series_info';
         let extraParams = type === 'movie' ? `&vod_id=${id}` : `&series_id=${id}`;
@@ -691,19 +563,18 @@
             const data = await apiFetch(baseAction, extraParams);
             const info = data.info || {};
             
-            document.getElementById('detail-desc').innerText = info.plot || info.description || 'لا يوجد وصف متاح لهذا العنوان.';
+            document.getElementById('detail-desc').innerText = info.plot || info.description || 'لا يوجد وصف متاح.';
+            let year = info.year || info.releasedate || '-';
+            let genre = info.genre || '-';
+            let durationOrSeasons = type === 'movie' ? (info.duration || info.runtime || '-') : (data.episodes ? `${Object.keys(data.episodes).length} مواسم` : '-');
             
-            let year = info.year || info.releasedate || 'غير متوفر';
-            let genre = info.genre || 'غير مصنف';
-            let durationOrSeasons = type === 'movie' ? (info.duration || info.runtime || 'N/A') : (data.episodes ? `${Object.keys(data.episodes).length} مواسم` : '1 موسم');
-            
-            document.getElementById('detail-meta').innerHTML = `<span>سنة الإصدار: ${year}</span> | <span>النوع: ${genre}</span> | <span>المدة/العرض: ${durationOrSeasons}</span>`;
+            document.getElementById('detail-meta').innerHTML = `<span>📅 ${year}</span> | <span>🎬 ${genre}</span> | <span>⏱ ${durationOrSeasons}</span>`;
 
             let actionsHtml = '';
-            const favBtnHtml = `<button class="action-btn fav focusable" tabindex="0" id="fav-btn" onclick="toggleFavorite()">❤ أضف للمفضلة</button>`;
+            const favBtnHtml = `<button class="action-btn fav" id="fav-btn" onclick="toggleFavorite()">❤ أضف للمفضلة</button>`;
 
             if (type === 'movie') {
-                actionsHtml = `<button class="action-btn focusable" tabindex="0" onclick="playStream('${id}', 'movie', '${item.container_extension || 'mkv'}')">▶ تشغيل الفيلم</button>` + favBtnHtml;
+                actionsHtml = `<button class="action-btn" onclick="playStream('${id}', 'movie', '${item.container_extension || 'mkv'}')">▶ تشغيل الفيلم</button>` + favBtnHtml;
                 document.getElementById('series-episodes-col').classList.add('hidden'); 
                 
                 if (activeStreamData.resume_time > 0) {
@@ -714,9 +585,9 @@
             } else if (type === 'series') {
                 actionsHtml = favBtnHtml;
                 if (activeStreamData.current_episode_id && activeStreamData.resume_time > 0) {
-                    actionsHtml = `<button class="action-btn focusable" tabindex="0" style="background:var(--primary); color:white;" onclick="resumeSeriesPlayback()">▶ متابعة المشاهدة (حلقة ${activeStreamData.current_episode_num})</button>` + actionsHtml;
+                    actionsHtml = `<button class="action-btn" style="background:var(--primary); color:white;" onclick="resumeSeriesPlayback()">▶ متابعة (حلقة ${activeStreamData.current_episode_num})</button>` + actionsHtml;
                 }
-                if (data.episodes) { actionsHtml += `<select id="season-selector" class="seasons-select focusable" tabindex="0"></select>`; }
+                if (data.episodes) { actionsHtml += `<select id="season-selector" class="seasons-select"></select>`; }
                 document.getElementById('series-episodes-col').classList.remove('hidden'); 
 
                 flatEpisodes = [];
@@ -729,11 +600,9 @@
             
             document.getElementById('detail-actions').innerHTML = actionsHtml;
             checkIfFavorite(); 
-            autoFocusFirstElement();
             if (type === 'series' && data.episodes) renderSeasons(data.episodes);
         } catch (e) {
-            document.getElementById('detail-actions').innerHTML = '<button class="action-btn focusable" tabindex="0" onclick="history.back()">رجوع</button>';
-            autoFocusFirstElement();
+            document.getElementById('detail-actions').innerHTML = '<button class="action-btn" onclick="history.back()">رجوع</button>';
         }
     }
 
@@ -754,11 +623,11 @@
         if (data && data.length > 0) {
             await supabaseClient.from('favorites').delete().eq('id', data[0].id);
             favBtn.innerText = '❤ أضف للمفضلة'; favBtn.style.background = 'rgba(40,40,40,0.8)';
-            showToast('تم الحذف من المفضلات');
+            showToast('تم الحذف');
         } else {
             await supabaseClient.from('favorites').insert([{ username: iptv.user, profile_name: currentProfile, item_id: String(activeStreamData.id), item_type: activeStreamData.type, item_data: activeStreamData }]);
             favBtn.innerText = '❌ إزالة من المفضلة'; favBtn.style.background = 'var(--primary)';
-            showToast('تم الحفظ بالمفضلة');
+            showToast('تم الحفظ');
         }
     }
 
@@ -779,10 +648,8 @@
                 progressHtml = `<div class="ep-progress"><div class="ep-progress-fill" style="width:${prog}%"></div></div>`;
             }
 
-            const div = document.createElement('button'); div.className = 'ep-card focusable'; div.tabIndex = 0;
+            const div = document.createElement('button'); div.className = 'ep-card';
             div.innerHTML = `<span>الحلقة ${ep.episode_num || '-'}</span> <span>▶</span> ${progressHtml}`;
-            div.addEventListener('mouseenter', (e) => safeFocus(e.target));
-            
             div.onclick = () => {
                 activeStreamData.current_episode_id = String(ep.id);
                 activeStreamData.current_episode_num = ep.episode_num;
@@ -803,84 +670,15 @@
             : `${domain}/${type === 'movie' ? 'movie' : 'series'}/${iptv.user}/${iptv.pass}/${id}.${ext}`;
         
         if (window.ReactNativeWebView) {
-            window.ReactNativeWebView.postMessage(JSON.stringify({
-                type: 'PLAY_VIDEO',
-                url: url,
-                videoId: String(id),
-                userId: iptv.user
-            }));
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'PLAY_VIDEO', url: url, videoId: String(id), userId: iptv.user }));
         } else {
-            alert('يرجى فتح الموقع من داخل تطبيق الآيفون لتشغيل الفيديو بكفاءة عالية.');
+            alert('يرجى فتح الموقع من داخل التطبيق.');
         }
     }
 
-    function getStaticLayoutRect(el) {
-        let x = 0, y = 0; let width = el.offsetWidth; let height = el.offsetHeight; let currentEl = el;
-        while(currentEl) { x += currentEl.offsetLeft; y += currentEl.offsetTop; currentEl = currentEl.offsetParent; }
-        return { left: x, top: y, right: x + width, bottom: y + height, width, height };
-    }
-
-    document.addEventListener('keydown', (e) => {
-        if (e.keyCode === 13) {
-            if(document.activeElement && document.activeElement.tagName !== 'INPUT') {
-                e.preventDefault();
-                document.activeElement.click();
-            }
-            return;
-        }
-
-        const KEYS = [37, 38, 39, 40];
-        if (KEYS.includes(e.keyCode)) {
-            if(document.activeElement.tagName === 'INPUT' && (e.keyCode === 37 || e.keyCode === 39)) return; 
-
-            e.preventDefault();
-            let current = document.activeElement;
-            if (!current || !current.classList.contains('focusable')) { autoFocusFirstElement(); return; }
-
-            let rect = getStaticLayoutRect(current);
-            let focusables = Array.from(document.querySelectorAll('.focusable')).filter(el => el.offsetParent !== null && window.getComputedStyle(el).display !== 'none');
-            let bestMatch = null; let minDistance = Infinity;
-
-            focusables.forEach(f => {
-                if(f === current) return;
-                let r = getStaticLayoutRect(f);
-                let dx = 0, dy = 0, dist = Infinity;
-
-                if(e.keyCode === 37 && r.right <= rect.left + 5) { dx = rect.left - r.right; dy = Math.abs((rect.top+rect.bottom)/2 - (r.top+r.bottom)/2); dist = dx + dy*4; }
-                else if(e.keyCode === 39 && r.left >= rect.right - 5) { dx = r.left - rect.right; dy = Math.abs((rect.top+rect.bottom)/2 - (r.top+r.bottom)/2); dist = dx + dy*4; }
-                else if(e.keyCode === 38 && r.bottom <= rect.top + 5) { dy = rect.top - r.bottom; dx = Math.abs((rect.left+rect.right)/2 - (r.left+r.right)/2); dist = dy + dx*4; }
-                else if(e.keyCode === 40 && r.top >= rect.bottom - 5) { dy = r.top - rect.bottom; dx = Math.abs((rect.left+rect.right)/2 - (r.left+r.right)/2); dist = dy + dx*4; }
-                if(dist < minDistance) { minDistance = dist; bestMatch = f; }
-            });
-
-            if(bestMatch) { 
-                bestMatch.focus(); 
-                const innerRow = bestMatch.closest('.row-inner') || bestMatch.closest('.categories-row');
-                if(innerRow) {
-                    const scrollTarget = bestMatch.offsetLeft - (innerRow.clientWidth / 2) + (bestMatch.clientWidth / 2);
-                    innerRow.scrollTo({ left: scrollTarget, behavior: 'smooth' });
-                }
-                const activeScreen = bestMatch.closest('.scrollable-screen:not(.hidden)');
-                if(activeScreen && (e.keyCode === 38 || e.keyCode === 40)) {
-                    const verticalTarget = bestMatch.offsetTop - (activeScreen.clientHeight / 2);
-                    activeScreen.scrollTo({ top: verticalTarget, behavior: 'smooth' });
-                }
-            }
-        }
-    });
-
-    document.querySelectorAll('.scrollable-screen').forEach(screen => {
-        screen.addEventListener('scroll', () => {
-            const header = document.getElementById('main-header');
-            if(screen.scrollTop > 30) header.classList.add('scrolled');
-            else header.classList.remove('scrolled');
-        });
-    });
-
-    window.addEventListener('popstate', (e) => {
+    window.addEventListener('popstate', () => {
         document.getElementById('details-screen').classList.add('hidden');
         document.getElementById('main-screen').classList.remove('hidden');
-        loadPage(currentTab); 
     });
 </script>
 </body>
