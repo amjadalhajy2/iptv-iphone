@@ -12,7 +12,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 🚀 التحديث الحاسم: إجبار سيرفر GitHub على الترقية واستخدام أحدث إصدار من مترجم Swift
       - name: Setup Latest Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
@@ -45,16 +44,6 @@ jobs:
           rm -rf ios .expo
           npx expo prebuild --platform ios --clean
 
-      # 🔥 اختراق الحماية: السماح بجميع الروابط المشفرة وغير المشفرة (HTTP/HTTPS)
-      - name: Force ATS Bypass natively
-        run: |
-          cd ${{ env.dir }}
-          PLIST_PATH=$(find ios -name "Info.plist" -not -path "*/Pods/*" | head -n 1)
-          /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity dict" "$PLIST_PATH" || true
-          /usr/libexec/PlistBuddy -c "Set :NSAppTransportSecurity:NSAllowsArbitraryLoads true" "$PLIST_PATH" || \
-          /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity:NSAllowsArbitraryLoads bool true" "$PLIST_PATH"
-
-      # إجبار الـ Pods على التخطي
       - name: Inject Podfile Bypass (Ruby)
         run: |
           cd ${{ env.dir }}/ios
@@ -83,7 +72,6 @@ jobs:
           export NODE_OPTIONS="--max-old-space-size=4096"
           npx expo export --platform ios -c
 
-      # الغلاف البرمجي لمنع أخطاء التوقيع الداخلي
       - name: Create xcodebuild Wrapper
         run: |
           mkdir -p $HOME/custom_bin
@@ -104,9 +92,19 @@ jobs:
           
           xcodebuild -workspace StreamIPTV.xcworkspace -scheme StreamIPTV -configuration Release -sdk iphoneos -derivedDataPath build
           
-      - name: Package to IPA
+      # 🔥 الجراحة النهائية: كسر الحماية داخل التطبيق الجاهز قبل تحزيمه
+      - name: Package to IPA and Force ATS Bypass
         run: |
           cd ${{ env.dir }}/ios/build/Build/Products/Release-iphoneos
+          
+          APP_PLIST="StreamIPTV.app/Info.plist"
+          echo "Patching Final Compiled App: $APP_PLIST"
+          
+          # تدمير أي حماية سابقة وزرع التصريح الشامل (NSAllowsArbitraryLoads)
+          /usr/libexec/PlistBuddy -c "Delete :NSAppTransportSecurity" "$APP_PLIST" || true
+          /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity dict" "$APP_PLIST"
+          /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity:NSAllowsArbitraryLoads bool true" "$APP_PLIST"
+          
           mkdir -p Payload
           mv *.app Payload/
           zip -r ../../../../StreamIPTV.ipa Payload
