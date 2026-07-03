@@ -90,8 +90,8 @@ jobs:
           echo "export NODE_BINARY=$(command -v node)" > .xcode.env.local
           echo "export NODE_OPTIONS=\"--max-old-space-size=4096\"" >> .xcode.env.local
           
-          # 🔥 بحث تلقائي عن اسم مساحة العمل الجديدة بعد تغيير اسم التطبيق إلى Amjad Stream
-          WORKSPACE=$(find . -name "*.xcworkspace" | head -n 1)
+          # 🔥 بحث دقيق في المجلد السطحي فقط لمنع التقاط الملفات الداخلية
+          WORKSPACE=$(find . -maxdepth 1 -name "*.xcworkspace" | head -n 1)
           SCHEME=$(basename "$WORKSPACE" .xcworkspace)
           
           echo "Building Workspace: $WORKSPACE with Scheme: $SCHEME"
