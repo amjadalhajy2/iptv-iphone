@@ -39,7 +39,7 @@ jobs:
           rm -rf ios .expo
           npx expo prebuild --platform ios --clean
 
-      # 🔥 الخطوة السحرية الجديدة: كسر حماية Apple للروابط العادية (HTTP) إجبارياً
+      # كسر حماية آبل لروابط السيرفرات (HTTP)
       - name: Force ATS (HTTP) Bypass in Info.plist
         run: |
           cd ${{ env.dir }}
@@ -48,6 +48,7 @@ jobs:
           /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity:NSAllowsArbitraryLoads bool true" "$PLIST_PATH" || \
           /usr/libexec/PlistBuddy -c "Set :NSAppTransportSecurity:NSAllowsArbitraryLoads true" "$PLIST_PATH"
 
+      # إجبار الـ Pods على التخطي
       - name: Inject Podfile Bypass (Ruby)
         run: |
           cd ${{ env.dir }}/ios
@@ -76,27 +77,28 @@ jobs:
           export NODE_OPTIONS="--max-old-space-size=4096"
           npx expo export --platform ios -c
 
+      # 🔥 الخيار النووي: استبدال محرك xcodebuild بنسخة تفرض التخطي على أي سكربت داخلي
+      - name: Create xcodebuild Wrapper
+        run: |
+          mkdir -p $HOME/custom_bin
+          cat << 'EOF' > $HOME/custom_bin/xcodebuild
+          #!/bin/bash
+          # هذا السطر يلتصق بأي عملية بناء ويضيف لها أوامر التخطي إجبارياً
+          /usr/bin/xcodebuild "$@" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" EXPANDED_CODE_SIGN_IDENTITY="" ENABLE_USER_SCRIPT_SANDBOXING=NO
+          EOF
+          chmod +x $HOME/custom_bin/xcodebuild
+          echo "$HOME/custom_bin" >> $GITHUB_PATH
+
       - name: Build App
         run: |
           cd ${{ env.dir }}/ios
-          
-          cat << 'EOF' > bypass.xcconfig
-          CODE_SIGNING_ALLOWED=NO
-          CODE_SIGNING_REQUIRED=NO
-          CODE_SIGN_IDENTITY=
-          EXPANDED_CODE_SIGN_IDENTITY=
-          ENTITLEMENTS_REQUIRED=NO
-          ENABLE_USER_SCRIPT_SANDBOXING=NO
-          EOF
-          
-          export XCODE_XCCONFIG_FILE="$(pwd)/bypass.xcconfig"
-          
           export NODE_BINARY=$(command -v node)
           export NODE_OPTIONS="--max-old-space-size=4096"
           echo "export NODE_BINARY=$(command -v node)" > .xcode.env.local
           echo "export NODE_OPTIONS=\"--max-old-space-size=4096\"" >> .xcode.env.local
           
-          xcodebuild -workspace StreamIPTV.xcworkspace -scheme StreamIPTV -configuration Release -sdk iphoneos -derivedDataPath build -xcconfig bypass.xcconfig CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" ENABLE_USER_SCRIPT_SANDBOXING=NO
+          # البناء سيعتمد الآن على المحرك المخترق الذي صنعناه في الخطوة السابقة
+          xcodebuild -workspace StreamIPTV.xcworkspace -scheme StreamIPTV -configuration Release -sdk iphoneos -derivedDataPath build
           
       - name: Package to IPA
         run: |
