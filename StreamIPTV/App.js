@@ -27,33 +27,41 @@ export default function App() {
       
       if (message.type === 'PROXY_FETCH') {
         try {
+          // 🔥 تزوير الهوية: إقناع السيرفر أننا مشغل VLC لسحب البيانات غصباً عنه
           const response = await fetch(message.url, {
             headers: {
-              'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
-              'Accept': 'application/json, text/plain, */*'
+              'User-Agent': 'VLC/3.0.0',
+              'Accept': '*/*'
             }
           });
           
-          if (!response.ok) throw new Error(`خطأ في السيرفر: ${response.status}`);
           const text = await response.text();
+          const safeData = encodeURIComponent(text).replace(/'/g, "%27");
           
-          // 🔥 النظام الجديد المنيع لنقل البيانات من التطبيق للويب
-          const replyObj = { type: 'PROXY_RESPONSE', reqId: message.reqId, data: text, error: null };
-          
-          // التغليف المزدوج يمنع أي خطأ برمجي مهما كان الرد يحتوي على رموز غريبة
+          // إرسال البيانات للصفحة بذكاء وبدون تعليق
           const script = `
-            if(window.handleNativeMessage) {
-              window.handleNativeMessage({ data: ${JSON.stringify(JSON.stringify(replyObj))} });
+            if(window.pendingFetches && window.pendingFetches['${message.reqId}']) {
+               try {
+                  var decoded = decodeURIComponent('${safeData}');
+                  var parsed = JSON.parse(decoded);
+                  window.pendingFetches['${message.reqId}'].resolve(parsed);
+               } catch(e) {
+                  alert("خطأ: السيرفر أرسل بيانات غير مفهومة! تأكد أن الرابط يعمل.");
+                  window.pendingFetches['${message.reqId}'].reject(e);
+               }
+               delete window.pendingFetches['${message.reqId}'];
             }
             true;
           `;
           webViewRef.current.injectJavaScript(script);
 
         } catch (err) {
-          const replyObj = { type: 'PROXY_RESPONSE', reqId: message.reqId, data: null, error: err.message || 'فشل الاتصال بالسيرفر' };
+          // ⚠️ في حال حظر نظام آبل الرابط أو كان لا يعمل، سيظهر لك تنبيه صريح
           const script = `
-            if(window.handleNativeMessage) {
-              window.handleNativeMessage({ data: ${JSON.stringify(JSON.stringify(replyObj))} });
+            alert("فشل الاتصال! السبب: ${err.message}");
+            if(window.pendingFetches && window.pendingFetches['${message.reqId}']) {
+               window.pendingFetches['${message.reqId}'].reject(new Error("${err.message}"));
+               delete window.pendingFetches['${message.reqId}'];
             }
             true;
           `;
