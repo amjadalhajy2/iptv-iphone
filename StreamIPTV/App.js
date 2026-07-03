@@ -4,7 +4,6 @@ import { StyleSheet, View, SafeAreaView, StatusBar, TouchableOpacity, Text } fro
 import { WebView } from 'react-native-webview';
 import { VLCPlayer } from 'react-native-vlc-media-player';
 import { createClient } from '@supabase/supabase-js';
-import ReactNativeBlobUtil from 'react-native-blob-util'; // 🔥 المكتبة الجديدة
 
 const SUPABASE_URL = 'https://kpfymvtyqbyjmlqfgujo.supabase.co'; 
 const SUPABASE_ANON_KEY = 'sb_publishable_g7dHfpmPHcQwAWsO9FFuGw_4lG8fyLc';
@@ -28,15 +27,17 @@ export default function App() {
       
       if (message.type === 'PROXY_FETCH') {
         try {
-          // 🔥 الهجوم النهائي: استخدام محرك جديد يتجاهل أخطاء شهادات SSL/TLS المعطوبة
-          const response = await ReactNativeBlobUtil.config({
-            trusty: true // هذا السطر السحري يكسر حماية TLS و SSL تماماً
-          }).fetch('GET', message.url, {
-            'User-Agent': 'VLC/3.0.0',
-            'Accept': '*/*'
+          const response = await fetch(message.url, {
+            method: 'GET',
+            headers: {
+              'User-Agent': 'VLC/3.0.0', // لخداع السيرفر
+              'Accept': '*/*'
+            }
           });
           
-          const text = response.text();
+          if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+          
+          const text = await response.text();
           const safeData = encodeURIComponent(text).replace(/'/g, "%27");
           
           const script = `
@@ -46,7 +47,7 @@ export default function App() {
                   var parsed = JSON.parse(decoded);
                   window.pendingFetches['${message.reqId}'].resolve(parsed);
                } catch(e) {
-                  alert("خطأ: السيرفر أرسل بيانات غير مفهومة.");
+                  alert("خطأ: السيرفر أرسل بيانات غير صالحة.");
                   window.pendingFetches['${message.reqId}'].reject(e);
                }
                delete window.pendingFetches['${message.reqId}'];
@@ -96,7 +97,7 @@ export default function App() {
       {!videoUrl ? (
         <WebView
           ref={webViewRef}
-          source={{ uri: 'https://amjadalhajy2.github.io/iptv-iphone/' }} // ⬅️ تذكر وضع رابط صفحتك هنا
+          source={{ uri: 'https://amjadalhajy2.github.io/iptv-iphone/' }} // ⬅️ تذكر رابط صفحتك
           javaScriptEnabled={true}
           domStorageEnabled={true}
           allowsInlineMediaPlayback={true}
