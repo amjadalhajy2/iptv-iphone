@@ -9,14 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.anonymous.StreamIPTV",
-      "infoPlist": {
-        "NSAppTransportSecurity": {
-          "NSAllowsArbitraryLoads": true,
-          "NSAllowsArbitraryLoadsInWebContent": true,
-          "NSAllowsLocalNetworking": true
-        }
-      }
+      "bundleIdentifier": "com.anonymous.StreamIPTV"
     },
     "android": {
       "adaptiveIcon": {
@@ -35,7 +28,8 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
-      ]
+      ],
+      "./withATSBypass.js"
     ],
     "experiments": {
       "typedRoutes": true,
