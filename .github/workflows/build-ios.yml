@@ -69,15 +69,12 @@ jobs:
           export NODE_OPTIONS="--max-old-space-size=4096"
           npx expo export --platform ios -c
 
-      - name: Create xcodebuild Wrapper
-        run: |
-          mkdir -p $HOME/custom_bin
-          cat << 'EOF' > $HOME/custom_bin/xcodebuild
-          #!/bin/bash
-          /usr/bin/xcodebuild "$@" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" EXPANDED_CODE_SIGN_IDENTITY="" ENABLE_USER_SCRIPT_SANDBOXING=NO
-          EOF
-          chmod +x $HOME/custom_bin/xcodebuild
-          echo "$HOME/custom_bin" >> $GITHUB_PATH
+      # ⚠️ تم حذف خطوة "Create xcodebuild Wrapper" بالكامل.
+      # كانت تعترض كل استدعاء لأمر xcodebuild في النظام (عبر PATH)، بما في ذلك
+      # استدعاءات xcodebuild الداخلية التي تشغّلها بعض سكربتات الـ Pods
+      # (مثل سكربت [CP-User] Build ExpoModulesJSI xcframework في Expo SDK 57)،
+      # مما تسبب بفشل تلك السكربتات. الفلاغات الآن تُمرَّر مباشرة لأمر xcodebuild
+      # الرئيسي فقط، وXcode ينشرها تلقائياً على كل الأهداف الفرعية بنفس عملية البناء.
 
       - name: Build App
         run: |
@@ -86,9 +83,10 @@ jobs:
           export NODE_OPTIONS="--max-old-space-size=4096"
           echo "export NODE_BINARY=$(command -v node)" > .xcode.env.local
           echo "export NODE_OPTIONS=\"--max-old-space-size=4096\"" >> .xcode.env.local
-          
-          xcodebuild -workspace StreamIPTV.xcworkspace -scheme StreamIPTV -configuration Release -sdk iphoneos -derivedDataPath build
-          
+
+          xcodebuild -workspace StreamIPTV.xcworkspace -scheme StreamIPTV -configuration Release -sdk iphoneos -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" EXPANDED_CODE_SIGN_IDENTITY="" ENABLE_USER_SCRIPT_SANDBOXING=NO
+
       - name: Package to IPA
         run: |
           cd ${{ env.dir }}/ios/build/Build/Products/Release-iphoneos
