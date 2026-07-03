@@ -2,23 +2,24 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Stream IPTV - Mobile UI</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* إعدادات شاملة لمنع الفراغات والاهتزاز */
+        /* 🔥 أقفال صارمة لمنع الاهتزاز والمساحات الفارغة نهائياً */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        :root { --bg: #0a0a0a; --primary: #e50914; --text: #ffffff; --card-w: 16vw; --card-h: 24vw; }
-        html, body { background-color: var(--bg); color: var(--text); font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; overflow-x: hidden; width: 100vw; height: 100vh; overscroll-behavior: none; }
+        :root { --bg: #0a0a0a; --primary: #e50914; --text: #ffffff; }
+        html, body { background-color: var(--bg); color: var(--text); font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; position: fixed; overscroll-behavior: none; }
         ::-webkit-scrollbar { display: none; }
         .hidden { display: none !important; }
 
-        .scrollable-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; z-index: 50; background: var(--bg); }
+        /* الشاشات القابلة للتمرير محددة العرض والطول */
+        .scrollable-screen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; overflow-y: auto; overflow-x: hidden; background: var(--bg); -webkit-overflow-scrolling: touch; }
         
-        #toast { visibility: hidden; min-width: 25vw; background-color: rgba(229, 9, 20, 0.95); color: #fff; text-align: center; border-radius: 2vw; padding: 2vw 4vw; position: fixed; z-index: 10000; left: 50%; transform: translateX(-50%); bottom: 4vh; font-size: 3vw; font-weight: bold; box-shadow: 0 1vh 3vh rgba(0,0,0,0.8); transition: opacity 0.4s; opacity: 0; }
+        #toast { visibility: hidden; width: 90vw; max-width: 400px; background-color: rgba(229, 9, 20, 0.95); color: #fff; text-align: center; border-radius: 2vw; padding: 3vw 4vw; position: fixed; z-index: 10000; left: 50%; transform: translateX(-50%); bottom: 4vh; font-size: 4vw; font-weight: bold; box-shadow: 0 1vh 3vh rgba(0,0,0,0.8); transition: opacity 0.4s; opacity: 0; }
         #toast.show { visibility: visible; opacity: 1; }
 
-        header { position: relative; width: 100%; padding: 4vw; background: rgba(0,0,0,0.8); display: flex; flex-direction: column; align-items: center; gap: 2vh; z-index: 100; box-shadow: 0 2vh 4vh rgba(0,0,0,0.5); }
+        header { width: 100vw; padding: 4vw; background: rgba(0,0,0,0.8); display: flex; flex-direction: column; align-items: center; gap: 2vh; z-index: 100; box-shadow: 0 2vh 4vh rgba(0,0,0,0.5); }
         .logo { font-size: 8vw; font-weight: 900; color: var(--primary); letter-spacing: 2px; text-align: center; }
         .nav-links { display: flex; flex-wrap: wrap; gap: 2vw; justify-content: center; width: 100%; }
         .nav-item { background: rgba(255,255,255,0.1); border: none; color: white; font-size: 3.5vw; font-weight: 600; cursor: pointer; padding: 1.5vh 3vw; border-radius: 20px; transition: 0.3s; }
@@ -27,16 +28,17 @@
         .search-box input { width: 100%; background: rgba(255,255,255,0.15); border: 0.1vw solid rgba(255,255,255,0.3); color: white; padding: 2vh 4vw; border-radius: 30px; font-size: 4vw; outline: none; text-align: center; }
         .user-info { font-size: 3vw; color: #ccc; margin-top: 1vh; }
 
-        #main-content { padding-top: 2vh; padding-bottom: 10vh; width: 100vw; }
+        #main-content { padding-top: 2vh; padding-bottom: 10vh; width: 100vw; overflow-x: hidden; box-sizing: border-box; }
         .row-container { margin-bottom: 3vh; width: 100vw; }
         .row-title { font-size: 5vw; font-weight: bold; margin: 0 4vw 1vh 4vw; }
-        .row-inner { display: flex; gap: 3vw; overflow-x: auto; padding: 1vh 4vw; scroll-behavior: smooth; }
-        .categories-row { display: flex; gap: 2vw; overflow-x: auto; padding: 1vh 4vw; scroll-behavior: smooth; }
+        
+        /* قفل التمرير الأفقي حتى لا يوسع الصفحة */
+        .row-inner { display: flex; gap: 3vw; overflow-x: auto; padding: 1vh 4vw; width: 100vw; box-sizing: border-box; scroll-behavior: smooth; }
+        .categories-row { display: flex; gap: 2vw; overflow-x: auto; padding: 1vh 4vw; width: 100vw; box-sizing: border-box; scroll-behavior: smooth; }
         .category-chip { background: rgba(255,255,255,0.1); color: white; padding: 1.5vh 4vw; border-radius: 30px; font-size: 3.5vw; font-weight: bold; white-space: nowrap; border: none; }
         .category-chip.active { background: var(--primary); }
         
-        /* ضبط المقاسات للهاتف */
-        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(28vw, 1fr)); gap: 3vw; padding: 2vh 4vw; margin-bottom: 5vh; width: 100vw; }
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(28vw, 1fr)); gap: 3vw; padding: 2vh 4vw; margin-bottom: 5vh; width: 100vw; box-sizing: border-box; }
         
         .card { border-radius: 2vw; position: relative; background: #1a1a1a; padding: 0; margin: 0; border: none; width: 100%; aspect-ratio: 2 / 3; overflow: hidden; }
         .row-inner .card { width: 28vw; flex: 0 0 auto; }
@@ -54,10 +56,10 @@
         .load-more-container { text-align: center; padding-bottom: 5vh; width: 100%; }
         .load-more-btn { background: rgba(40,40,40,0.9); color: white; padding: 2vh 6vw; font-size: 4vw; border-radius: 2vw; border: 1px solid rgba(255,255,255,0.2); font-weight: bold; }
 
-        /* شاشة التفاصيل للآيفون */
-        #details-screen { padding: 4vh 4vw; background-size: cover; background-position: center; box-shadow: inset 0 0 80vw 60vw rgba(0,0,0,0.95); }
+        /* شاشة التفاصيل */
+        #details-screen { padding: 4vh 4vw; background-size: cover; background-position: center; }
         .details-layout { display: flex; flex-direction: column; gap: 3vh; align-items: center; width: 100%; }
-        .details-poster-col { width: 50vw; aspect-ratio: 2/3; border-radius: 3vw; overflow: hidden; box-shadow: 0 2vh 6vh rgba(0,0,0,0.9); }
+        .details-poster-col { width: 50vw; aspect-ratio: 2/3; border-radius: 3vw; overflow: hidden; box-shadow: 0 2vh 6vh rgba(0,0,0,0.9); position: relative; }
         .details-poster { width: 100%; height: 100%; object-fit: cover; }
         .details-info-col { width: 100%; text-align: center; display: flex; flex-direction: column; gap: 2vh; }
         .details-title { font-size: 7vw; font-weight: bold; margin: 0; }
@@ -65,15 +67,15 @@
         .action-bar { display: flex; flex-direction: column; gap: 2vh; width: 100%; }
         .action-btn { background: white; color: black; border: none; padding: 2vh; font-size: 4vw; font-weight: bold; border-radius: 2vw; width: 100%; text-align: center; }
         .action-btn.fav { background: rgba(50,50,50,0.8); color: white; border: 1px solid white; }
-        .seasons-select { background: rgba(30,30,30,0.85); color: white; padding: 2vh; font-size: 4vw; border-radius: 2vw; width: 100%; }
+        .seasons-select { background: rgba(30,30,30,0.85); color: white; padding: 2vh; font-size: 4vw; border-radius: 2vw; width: 100%; border: 1px solid white; }
         .details-desc { font-size: 3.5vw; line-height: 1.6; opacity: 0.9; text-align: justify; }
         .details-episodes-col { width: 100%; }
         .episodes-list-vertical { display: flex; flex-direction: column; gap: 2vh; }
-        .ep-card { background: rgba(35,35,35,0.85); padding: 2.5vh 4vw; border-radius: 2vw; display: flex; justify-content: space-between; align-items: center; color: white; font-size: 4vw; position: relative; overflow: hidden; border: none; }
+        .ep-card { background: rgba(35,35,35,0.85); padding: 2.5vh 4vw; border-radius: 2vw; display: flex; justify-content: space-between; align-items: center; color: white; font-size: 4vw; border: none; }
 
         /* شاشات الدخول */
         #login-screen, #profiles-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg); }
-        .login-wrapper { background: rgba(20, 20, 20, 0.9); padding: 6vw; border-radius: 4vw; text-align: center; width: 90vw; max-width: 400px; box-shadow: 0 1vh 3vh rgba(0,0,0,0.5); }
+        .login-wrapper { background: rgba(20, 20, 20, 0.9); padding: 6vw; border-radius: 4vw; text-align: center; width: 90vw; box-shadow: 0 1vh 3vh rgba(0,0,0,0.5); }
         .login-logo { color: var(--primary); font-size: 10vw; font-weight: 900; margin: 0 0 2vh 0; }
         .login-title { font-size: 6vw; color: white; margin: 0 0 1vh 0; }
         .login-subtitle { font-size: 3.5vw; color: #aaa; margin: 0 0 4vh 0; }
@@ -188,29 +190,11 @@
     function showToast(msg) {
         const t = document.getElementById('toast');
         t.innerText = msg; t.classList.add('show');
-        setTimeout(() => t.classList.remove('show'), 4000);
+        setTimeout(() => t.classList.remove('show'), 5000);
     }
 
-    // 💡 الجسر السليم لاستقبال البيانات من التطبيق
+    // 💡 الجسر السليم لاستقبال البيانات
     window.pendingFetches = {};
-    window.handleNativeMessage = function(event) {
-        try {
-            const msg = JSON.parse(event.data);
-            if (msg.type === 'PROXY_RESPONSE') {
-                const pending = window.pendingFetches[msg.reqId];
-                if (pending) {
-                    if (msg.error) {
-                        pending.reject(new Error(msg.error));
-                    } else {
-                        pending.resolve(JSON.parse(msg.data));
-                    }
-                    delete window.pendingFetches[msg.reqId];
-                }
-            }
-        } catch (e) {
-            console.error("Bridge parse error", e);
-        }
-    };
 
     async function apiFetch(action, extraParams = '') {
         let domain = iptv.domain || document.getElementById('iptv-domain').value.trim();
@@ -233,7 +217,7 @@
                 
                 setTimeout(() => {
                     if (window.pendingFetches[reqId]) {
-                        window.pendingFetches[reqId].reject(new Error('انتهى وقت الطلب (تأكد من الرابط)'));
+                        window.pendingFetches[reqId].reject(new Error('انتهى وقت الطلب. ربما السيرفر محظور أو الرابط خاطئ.'));
                         delete window.pendingFetches[reqId];
                     }
                 }, 15000);
@@ -277,14 +261,14 @@
                 localStorage.setItem('iptv_user', u); 
                 localStorage.setItem('iptv_pass', p);
                 
-                showToast('✅ تم تسجيل الدخول');
                 btn.innerText = 'دخول'; btn.disabled = false;
                 fetchProfilesFromSupabase();
             } else { 
-                throw new Error('البيانات غير صحيحة'); 
+                throw new Error('بيانات الدخول غير صحيحة'); 
             }
         } catch (e) {
-            showToast('❌ ' + (e.message || 'فشل الاتصال'));
+            // الآن سيظهر الإشعار بالتفصيل من داخل التطبيق!
+            showToast('❌ ' + (e.message || 'فشل الاتصال بالسيرفر'));
             btn.innerText = 'دخول'; btn.disabled = false;
             iptv = { domain: '', user: '', pass: '' };
         }
