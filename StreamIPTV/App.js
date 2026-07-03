@@ -4,6 +4,7 @@ import { StyleSheet, View, SafeAreaView, StatusBar, TouchableOpacity, Text } fro
 import { WebView } from 'react-native-webview';
 import { VLCPlayer } from 'react-native-vlc-media-player';
 import { createClient } from '@supabase/supabase-js';
+import ReactNativeBlobUtil from 'react-native-blob-util';
 
 const SUPABASE_URL = 'https://kpfymvtyqbyjmlqfgujo.supabase.co'; 
 const SUPABASE_ANON_KEY = 'sb_publishable_g7dHfpmPHcQwAWsO9FFuGw_4lG8fyLc';
@@ -26,10 +27,18 @@ export default function App() {
       }
       
       if (message.type === 'PROXY_FETCH') {
-        
-        // دالة مساعدة لإرسال البيانات الناجحة للصفحة
-        const sendSuccess = (text) => {
+        try {
+          // 🔥 الهجوم الثاني: استخدام Blob Util لكسر كل قيود الآيفون الخاصة بـ HTTP/HTTPS
+          const response = await ReactNativeBlobUtil.config({
+            trusty: true // هذه الخاصية تتجاهل أي أخطاء متعلقة بشهادة الأمان SSL تماماً
+          }).fetch('GET', message.url, {
+            'User-Agent': 'IPTVSmartersPro', // لخداع سيرفرات IPTV
+            'Accept': '*/*'
+          });
+          
+          const text = await response.text();
           const safeData = encodeURIComponent(text).replace(/'/g, "%27");
+          
           const script = `
             if(window.pendingFetches && window.pendingFetches['${message.reqId}']) {
                try {
@@ -37,7 +46,7 @@ export default function App() {
                   var parsed = JSON.parse(decoded);
                   window.pendingFetches['${message.reqId}'].resolve(parsed);
                } catch(e) {
-                  alert("خطأ: البيانات المستلمة من السيرفر غير صالحة.");
+                  alert("البيانات المستلمة غير صالحة. هل الرابط صحيح؟");
                   window.pendingFetches['${message.reqId}'].reject(e);
                }
                delete window.pendingFetches['${message.reqId}'];
@@ -45,53 +54,17 @@ export default function App() {
             true;
           `;
           webViewRef.current.injectJavaScript(script);
-        };
 
-        // دالة مساعدة لإرسال رسالة الخطأ للصفحة
-        const sendError = (errMsg) => {
+        } catch (err) {
           const script = `
-            alert("فشل الاتصال: ${errMsg}");
+            alert("لا يزال الاتصال مقطوعاً: ${err.message}");
             if(window.pendingFetches && window.pendingFetches['${message.reqId}']) {
-               window.pendingFetches['${message.reqId}'].reject(new Error("${errMsg}"));
+               window.pendingFetches['${message.reqId}'].reject(new Error("${err.message}"));
                delete window.pendingFetches['${message.reqId}'];
             }
             true;
           `;
           webViewRef.current.injectJavaScript(script);
-        };
-
-        try {
-          // 🚀 المحاولة الأولى: الاتصال المباشر مع تزوير الهوية (لتخطي حظر السيرفرات)
-          const response = await fetch(message.url, {
-            headers: {
-              'User-Agent': 'IPTVSmartersPro', 
-              'Accept': 'application/json'
-            }
-          });
-          
-          if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-          const text = await response.text();
-          sendSuccess(text);
-
-        } catch (primaryError) {
-          console.log("Direct connection failed, trying Proxy...", primaryError.message);
-          
-          try {
-            // 🛡️ المحاولة الثانية (الخطة البديلة): استخدام نفق سحابي عالمي لتخطي حظر مزود الإنترنت وحماية آبل
-            // نضيف رمزاً عشوائياً (Date.now) لمنع الكاش (البيانات القديمة)
-            const nocacheUrl = message.url + (message.url.includes('?') ? '&' : '?') + 'r=' + Date.now();
-            const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(nocacheUrl);
-
-            const proxyResponse = await fetch(proxyUrl);
-            if (!proxyResponse.ok) throw new Error(`Proxy HTTP Error: ${proxyResponse.status}`);
-            
-            const text = await proxyResponse.text();
-            sendSuccess(text);
-
-          } catch (proxyError) {
-            // إذا فشل النفق السحابي أيضاً، فهذا يعني يقيناً أن السيرفر متوقف من المصدر أو الرابط خاطئ
-            sendError(`السيرفر لا يعمل أو الرابط خاطئ تماماً. التفاصيل: ${primaryError.message}`);
-          }
         }
       }
     } catch (error) {
