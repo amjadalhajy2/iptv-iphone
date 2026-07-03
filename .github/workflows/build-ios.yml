@@ -90,27 +90,35 @@ jobs:
           echo "export NODE_BINARY=$(command -v node)" > .xcode.env.local
           echo "export NODE_OPTIONS=\"--max-old-space-size=4096\"" >> .xcode.env.local
           
-          xcodebuild -workspace StreamIPTV.xcworkspace -scheme StreamIPTV -configuration Release -sdk iphoneos -derivedDataPath build
+          # 🔥 بحث تلقائي عن اسم مساحة العمل الجديدة بعد تغيير اسم التطبيق إلى Amjad Stream
+          WORKSPACE=$(find . -name "*.xcworkspace" | head -n 1)
+          SCHEME=$(basename "$WORKSPACE" .xcworkspace)
           
+          echo "Building Workspace: $WORKSPACE with Scheme: $SCHEME"
+          xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" -configuration Release -sdk iphoneos -derivedDataPath build
+                
       # 🔥 الجراحة النهائية: كسر الحماية داخل التطبيق الجاهز قبل تحزيمه
+
       - name: Package to IPA and Force ATS Bypass
         run: |
           cd ${{ env.dir }}/ios/build/Build/Products/Release-iphoneos
           
-          APP_PLIST="StreamIPTV.app/Info.plist"
+          # 🔥 بحث تلقائي عن مجلد التطبيق
+          APP_DIR=$(find . -name "*.app" | head -n 1)
+          APP_PLIST="$APP_DIR/Info.plist"
+          
           echo "Patching Final Compiled App: $APP_PLIST"
           
-          # تدمير أي حماية سابقة وزرع التصريح الشامل (NSAllowsArbitraryLoads)
           /usr/libexec/PlistBuddy -c "Delete :NSAppTransportSecurity" "$APP_PLIST" || true
           /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity dict" "$APP_PLIST"
           /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity:NSAllowsArbitraryLoads bool true" "$APP_PLIST"
           
           mkdir -p Payload
           mv *.app Payload/
-          zip -r ../../../../StreamIPTV.ipa Payload
+          zip -r ../../../../AmjadStream.ipa Payload
 
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: StreamIPTV-IPA
+          name: AmjadStream-IPA
           path: '**/*.ipa'
