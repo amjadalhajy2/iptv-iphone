@@ -1,6 +1,6 @@
 import 'react-native-url-polyfill/auto';
 import React, { useState, useRef, useEffect } from 'react';
-import { StyleSheet, View, StatusBar, TouchableOpacity, Text, Dimensions, TouchableWithoutFeedback, PanResponder } from 'react-native';
+import { StyleSheet, View, StatusBar, TouchableOpacity, Text, Dimensions, TouchableWithoutFeedback, PanResponder, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { VLCPlayer } from 'react-native-vlc-media-player';
 import { createClient } from '@supabase/supabase-js';
@@ -11,7 +11,7 @@ import Slider from '@react-native-community/slider';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
 const SUPABASE_URL = 'https://kpfymvtyqbyjmlqfgujo.supabase.co'; 
-const SUPABASE_ANON_KEY = 'sb_publishable_g7dHfpmPHcQwAWsO9FFuGw_4lG8fyLc';
+    const SUPABASE_ANON_KEY = 'sb_publishable_g7dHfpmPHcQwAWsO9FFuGw_4lG8fyLc';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -23,25 +23,27 @@ export default function App() {
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [showControls, setShowControls] = useState(true);
+  const [isBuffering, setIsBuffering] = useState(false); // 🔥 حالة التحميل
   
   const [resumeTime, setResumeTime] = useState(0);
   const [hasResumed, setHasResumed] = useState(false);
   
-  // حالات الإيماءات والأبعاد
   const [volume, setVolume] = useState(100);
   const [brightness, setBrightness] = useState(0.5);
-  const [aspectRatio, setAspectRatio] = useState('16:9'); // الأبعاد المعروفة
-  const [indicator, setIndicator] = useState({ type: null, value: 0 }); // type: 'volume' | 'brightness' | 'aspect'
+  const [aspectRatio, setAspectRatio] = useState('16:9');
   
-  // حالات شريط التمرير
+  // شريط الإضاءة والصوت الجانبي
+  const [showSideBar, setShowSideBar] = useState({ type: null, value: 0 }); 
+  
   const [isSliding, setIsSliding] = useState(false);
+  const [isSeeking, setIsSeeking] = useState(false); // 🔥 لمنع ارتداد الشريط
   const [slidingTime, setSlidingTime] = useState(0);
 
   const webViewRef = useRef(null);
   const vlcRef = useRef(null);
   const controlsTimer = useRef(null);
   const syncTimer = useRef(null);
-  const indicatorTimer = useRef(null);
+  const sideBarTimer = useRef(null);
   const lastTap = useRef(null);
 
   const webviewSource = useRef({ uri: 'https://amjadalhajy2.github.io/iptv-iphone/' }).current; // ⬅️ رابط صفحتك
@@ -63,12 +65,8 @@ export default function App() {
         await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
         setVideoData(message);
         setResumeTime(message.resumeTime || 0);
-        setHasResumed(false);
-        setIsPaused(false);
-        setProgress(0);
-        setDuration(0);
-        setAspectRatio('16:9'); // العودة للبعد الافتراضي
-        triggerControlsTimeout();
+        setHasResumed(false); setIsPaused(false); setProgress(0); setDuration(0); setIsBuffering(true);
+        setAspectRatio('16:9'); triggerControlsTimeout();
       }
       
       if (message.type === 'PROXY_FETCH') {
@@ -81,7 +79,7 @@ export default function App() {
           webViewRef.current.injectJavaScript(`if(window.pendingFetches['${message.reqId}']) { window.pendingFetches['${message.reqId}'].reject(new Error("${err.message}")); delete window.pendingFetches['${message.reqId}']; } true;`);
         }
       }
-    } catch (error) { console.error("Bridge Error:", error); }
+    } catch (error) {}
   };
 
   const forceSyncNow = async (currentTimeSec, totalDurationSec) => {
@@ -93,14 +91,14 @@ export default function App() {
       } else {
         await supabase.from('user_activity').insert([{ username: videoData.userId, profile_name: videoData.profileName, movie_id: videoData.videoId, item_type: videoData.itemType, item_data: videoData.itemData, resume_time: currentTimeSec, updated_at: new Date() }]);
       }
-    } catch (e) { console.log("Sync Error:", e); }
+    } catch (e) {}
   };
 
   const onProgress = (e) => {
-    if(isSliding) return; 
+    if(isSliding || isSeeking) return; // 🔥 منع الشريط من الارتداد أثناء السحب أو قبل أن يستقر
+    setIsBuffering(false); // إخفاء دائرة التحميل
     
-    const currentDur = e.duration;
-    const currentPos = e.currentTime;
+    const currentDur = e.duration; const currentPos = e.currentTime;
     if (currentDur > 0) setDuration(currentDur);
     setProgress(currentPos);
 
@@ -118,24 +116,11 @@ export default function App() {
     }
   };
 
-  const playNextEpisode = () => {
-    if(!videoData?.remainingEps || videoData.remainingEps.length === 0) return;
-    
-    // سحب الحلقة التالية من المصفوفة وتحديث القائمة
-    const nextEp = videoData.remainingEps[0];
-    const newRemaining = videoData.remainingEps.slice(1);
-    
-    let updatedItemData = { ...videoData.itemData };
-    updatedItemData.current_episode_id = nextEp.id;
-    updatedItemData.current_episode_num = nextEp.num;
-
-    setVideoData({ 
-        ...videoData, 
-        url: nextEp.url, 
-        itemData: updatedItemData, 
-        remainingEps: newRemaining 
-    });
-    setResumeTime(0); setHasResumed(false); setProgress(0);
+  const playEpisode = (epData) => {
+    if(!epData) return;
+    let updatedItemData = { ...videoData.itemData, current_episode_id: epData.id, current_episode_num: epData.num };
+    setVideoData({ ...videoData, url: epData.url, itemData: updatedItemData, nextEpisode: epData.nextEpisode, prevEpisode: epData.prevEpisode });
+    setResumeTime(0); setHasResumed(false); setProgress(0); setIsBuffering(true);
   };
 
   const handleClosePlayer = async () => {
@@ -156,23 +141,27 @@ export default function App() {
     controlsTimer.current = setTimeout(() => setShowControls(false), 5000);
   };
 
-  const showIndicatorPopup = (type, val) => {
-    setIndicator({ type, value: val });
-    clearTimeout(indicatorTimer.current);
-    indicatorTimer.current = setTimeout(() => setIndicator({ type: null, value: 0 }), 1500);
+  const activateSideBar = (type, val) => {
+    setShowSideBar({ type, value: val });
+    clearTimeout(sideBarTimer.current);
+    sideBarTimer.current = setTimeout(() => setShowSideBar({ type: null, value: 0 }), 1500);
   };
 
-  // 🔥 التبديل الفعلي لأبعاد الفيديو
   const cycleAspectRatio = () => {
-    const ratios = ['16:9', '4:3', 'fill', '16:10', '21:9', 'best fit'];
-    const nextRatio = ratios[(ratios.indexOf(aspectRatio) + 1) % ratios.length];
-    setAspectRatio(nextRatio);
-    showIndicatorPopup('aspect', nextRatio.toUpperCase());
+    const ratios = ['16:9', '4:3', 'fill', '16:10', '21:9'];
+    setAspectRatio(ratios[(ratios.indexOf(aspectRatio) + 1) % ratios.length]);
     triggerControlsTimeout();
   };
 
-  const skipForward = () => { if (duration > 0 && vlcRef.current) { vlcRef.current.seek(Math.min(1, (progress + 10000) / duration)); triggerControlsTimeout(); }};
-  const skipBackward = () => { if (duration > 0 && vlcRef.current) { vlcRef.current.seek(Math.max(0, (progress - 10000) / duration)); triggerControlsTimeout(); }};
+  const doSeek = (targetTimeMs) => {
+    if (duration > 0 && vlcRef.current) {
+      setIsSeeking(true); setIsBuffering(true); // تشغيل أيقونة التحميل
+      vlcRef.current.seek(targetTimeMs / duration);
+      setProgress(targetTimeMs);
+      setTimeout(() => setIsSeeking(false), 1500); // إعطاء المشغل وقتاً للاستقرار
+      triggerControlsTimeout();
+    }
+  };
 
   const panResponder = useRef(
     PanResponder.create({
@@ -182,13 +171,12 @@ export default function App() {
         const isLeftSide = x0 < screenHeight / 2; 
         if (isLeftSide) {
           let newBrightness = Math.max(0, Math.min(1, brightness - (dy / 250)));
-          setBrightness(newBrightness);
-          await Brightness.setBrightnessAsync(newBrightness);
-          showIndicatorPopup('brightness', Math.round(newBrightness * 100));
+          setBrightness(newBrightness); await Brightness.setBrightnessAsync(newBrightness);
+          activateSideBar('brightness', newBrightness * 100);
         } else {
           let newVolume = Math.max(0, Math.min(100, volume - (dy / 2.5)));
           setVolume(newVolume);
-          showIndicatorPopup('volume', Math.round(newVolume));
+          activateSideBar('volume', newVolume);
         }
         triggerControlsTimeout();
       }
@@ -197,13 +185,16 @@ export default function App() {
 
   const handleScreenTap = () => {
     const now = Date.now();
-    if (lastTap.current && (now - lastTap.current) < 300) skipForward();
+    if (lastTap.current && (now - lastTap.current) < 300) doSeek(Math.min(duration, progress + 10000));
     else showControls ? setShowControls(false) : triggerControlsTimeout();
     lastTap.current = now;
   };
 
-  // 🔥 زر الحلقة القادمة: في الـ 3 دقائق الأخيرة (180,000 مللي ثانية) وتوجد حلقات متبقية
-  const showNextEpBtn = videoData?.remainingEps?.length > 0 && (duration > 0) && ((duration - progress) <= 180000);
+  // تنسيق العنوان: إضافة (S2:E5) في المسلسلات
+  let displayTitle = videoData?.itemData?.name || videoData?.itemData?.title || 'جاري التشغيل';
+  if (videoData?.itemType === 'series' && videoData?.seasonNum && videoData?.itemData?.current_episode_num) {
+    displayTitle += ` (S${videoData.seasonNum}:E${videoData.itemData.current_episode_num})`;
+  }
 
   return (
     <View style={styles.container}>
@@ -218,18 +209,24 @@ export default function App() {
           
           <TouchableWithoutFeedback onPress={handleScreenTap}>
             <View style={styles.videoTouchable}>
-              {/* 🔥 ربط الـ Aspect Ratio برمجياً هنا */}
-              <VLCPlayer ref={vlcRef} style={styles.videoPlayer} videoAspectRatio={aspectRatio} source={{ uri: videoData.url }} autoplay={true} paused={isPaused} resizeMode="cover" onProgress={onProgress} onEnd={handleClosePlayer} onError={handleClosePlayer} volume={volume} />
+              <VLCPlayer ref={vlcRef} style={styles.videoPlayer} videoAspectRatio={aspectRatio} source={{ uri: videoData.url }} autoplay={true} paused={isPaused} resizeMode="cover" onProgress={onProgress} onEnd={handleClosePlayer} onError={handleClosePlayer} volume={volume} onBuffering={() => setIsBuffering(true)} onPlaying={() => setIsBuffering(false)} />
             </View>
           </TouchableWithoutFeedback>
 
-          {/* نافذة الإضاءة والصوت والأبعاد المنبثقة */}
-          {indicator.type && (
-            <View style={styles.indicatorPopup}>
-              {indicator.type === 'volume' && <Ionicons name={indicator.value === 0 ? "volume-mute" : "volume-high"} size={45} color="white" />}
-              {indicator.type === 'brightness' && <Ionicons name="sunny" size={45} color="white" />}
-              {indicator.type === 'aspect' && <MaterialIcons name="aspect-ratio" size={45} color="white" />}
-              <Text style={styles.indicatorText}>{indicator.type === 'aspect' ? indicator.value : `${indicator.value}%`}</Text>
+          {/* 🔥 دائرة التحميل أثناء التقديم/التأخير */}
+          {isBuffering && (
+            <View style={styles.loadingOverlay} pointerEvents="none">
+              <ActivityIndicator size="large" color="#e50914" />
+            </View>
+          )}
+
+          {/* 🔥 الأشرطة الجانبية المحدثة للإضاءة والصوت */}
+          {showSideBar.type && (
+            <View style={[styles.sideBarWrapper, showSideBar.type === 'volume' ? {right: 30} : {left: 30}]}>
+              <View style={styles.sideBarBg}>
+                <View style={[styles.sideBarFill, {height: `${showSideBar.value}%`}]} />
+              </View>
+              <Ionicons name={showSideBar.type === 'volume' ? (showSideBar.value === 0 ? "volume-mute" : "volume-high") : "sunny"} size={24} color="white" style={{marginTop: 10}} />
             </View>
           )}
 
@@ -240,58 +237,45 @@ export default function App() {
                 <TouchableOpacity style={styles.iconBtn} onPress={handleClosePlayer}>
                   <Ionicons name="close" size={32} color="white" />
                 </TouchableOpacity>
-                <Text style={styles.videoTitleText}>{videoData.itemData?.name || videoData.itemData?.title || 'جاري التشغيل'}</Text>
-                
+                <Text style={styles.videoTitleText}>{displayTitle}</Text>
                 <View style={{flex: 1}} />
-                
-                {/* زر الأبعاد فقط */}
                 <TouchableOpacity style={styles.topRightBtn} onPress={cycleAspectRatio}>
                   <MaterialIcons name="aspect-ratio" size={26} color="white" />
                 </TouchableOpacity>
               </View>
 
               <View style={styles.centerControls} pointerEvents="box-none">
-                <TouchableOpacity style={styles.seekBtn} onPress={skipBackward}><MaterialIcons name="replay-10" size={50} color="white" /></TouchableOpacity>
-                <TouchableOpacity style={styles.playBtn} onPress={() => { setIsPaused(!isPaused); triggerControlsTimeout(); }}>
-                  <Ionicons name={isPaused ? "play" : "pause"} size={55} color="white" style={{marginLeft: isPaused ? 6 : 0}} />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.seekBtn} onPress={skipForward}><MaterialIcons name="forward-10" size={50} color="white" /></TouchableOpacity>
-              </View>
-
-              <View style={styles.bottomControls}>
-                
-                {/* زر الحلقة القادمة العائم */}
-                {showNextEpBtn && (
-                  <TouchableOpacity style={styles.nextEpAbsoluteBtn} onPress={playNextEpisode}>
-                    <Text style={styles.nextEpAbsoluteText}>تشغيل الحلقة القادمة</Text>
-                    <Ionicons name="play-skip-forward" size={18} color="white" style={{marginLeft: 8}}/>
+                {/* زر الحلقة السابقة */}
+                {videoData.itemType === 'series' && (
+                  <TouchableOpacity style={[styles.seekBtn, {opacity: videoData.prevEpisode ? 1 : 0.3, marginRight: 15}]} onPress={() => playEpisode(videoData.prevEpisode)} disabled={!videoData.prevEpisode}>
+                    <Ionicons name="play-skip-back" size={35} color="white" />
                   </TouchableOpacity>
                 )}
 
-                {/* فقاعة الوقت أثناء السحب */}
-                {isSliding && (
-                  <View style={styles.slidingBubble}>
-                    <Text style={styles.slidingBubbleText}>{formatTime(slidingTime)}</Text>
-                  </View>
-                )}
+                <TouchableOpacity style={styles.seekBtn} onPress={() => doSeek(Math.max(0, progress - 10000))}><MaterialIcons name="replay-10" size={50} color="white" /></TouchableOpacity>
+                <TouchableOpacity style={styles.playBtn} onPress={() => { setIsPaused(!isPaused); triggerControlsTimeout(); }}>
+                  <Ionicons name={isPaused ? "play" : "pause"} size={55} color="white" style={{marginLeft: isPaused ? 6 : 0}} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.seekBtn} onPress={() => doSeek(Math.min(duration, progress + 10000))}><MaterialIcons name="forward-10" size={50} color="white" /></TouchableOpacity>
 
+                {/* زر الحلقة التالية */}
+                {videoData.itemType === 'series' && (
+                  <TouchableOpacity style={[styles.seekBtn, {opacity: videoData.nextEpisode ? 1 : 0.3, marginLeft: 15}]} onPress={() => playEpisode(videoData.nextEpisode)} disabled={!videoData.nextEpisode}>
+                    <Ionicons name="play-skip-forward" size={35} color="white" />
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              <View style={styles.bottomControls}>
+                {isSliding && <View style={styles.slidingBubble}><Text style={styles.slidingBubbleText}>{formatTime(slidingTime)}</Text></View>}
                 <View style={styles.progressRow}>
                   <Text style={styles.timeText}>{formatTime(progress)}</Text>
                   <Slider
-                    style={{flex: 1, height: 40}}
-                    minimumValue={0}
-                    maximumValue={duration > 0 ? duration : 1}
+                    style={{flex: 1, height: 40}} minimumValue={0} maximumValue={duration > 0 ? duration : 1}
                     value={isSliding ? slidingTime : progress}
-                    minimumTrackTintColor="#e50914"
-                    maximumTrackTintColor="rgba(255,255,255,0.3)"
-                    thumbTintColor="#e50914"
-                    onValueChange={(val) => {
-                      setIsSliding(true); setSlidingTime(val); clearTimeout(controlsTimer.current);
-                    }}
-                    onSlidingComplete={(val) => {
-                      setIsSliding(false);
-                      if(vlcRef.current && duration > 0){ vlcRef.current.seek(val / duration); triggerControlsTimeout(); }
-                    }}
+                    minimumTrackTintColor="#e50914" maximumTrackTintColor="rgba(255,255,255,0.3)" thumbTintColor="#e50914"
+                    onValueChange={(val) => { setIsSliding(true); setSlidingTime(val); clearTimeout(controlsTimer.current); }}
+                    onSlidingComplete={(val) => { setIsSliding(false); doSeek(val); }}
                   />
                   <Text style={styles.timeText}>{formatTime(duration)}</Text>
                 </View>
@@ -308,15 +292,15 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0a0a0a' }, webviewContainer: { flex: 1 },
   playerContainer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#000', justifyContent: 'center' },
   videoTouchable: { flex: 1, width: '100%', height: '100%', justifyContent: 'center' }, videoPlayer: { width: '100%', height: '100%' },
-  
   controlsOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'space-between', backgroundColor: 'rgba(0,0,0,0.5)' },
+  loadingOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center' },
   
   topControls: { flexDirection: 'row', alignItems: 'center', padding: 25 },
   iconBtn: { padding: 5 },
   videoTitleText: { color: 'white', fontSize: 20, fontWeight: 'bold', marginLeft: 15, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: {width: 1, height: 1}, textShadowRadius: 4 },
   topRightBtn: { padding: 10, marginLeft: 15, backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 25 },
   
-  centerControls: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 70 },
+  centerControls: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 40 },
   playBtn: { width: 90, height: 90, borderRadius: 45, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#FFF' },
   seekBtn: { padding: 10, backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 35 },
   
@@ -324,12 +308,10 @@ const styles = StyleSheet.create({
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: 10, width: '100%' },
   timeText: { color: '#FFF', fontSize: 14, fontWeight: 'bold', width: 55, textAlign: 'center' },
   
-  indicatorPopup: { position: 'absolute', alignSelf: 'center', top: '40%', backgroundColor: 'rgba(0,0,0,0.7)', padding: 25, borderRadius: 15, alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
-  indicatorText: { color: 'white', fontSize: 22, fontWeight: 'bold', marginTop: 10 },
+  sideBarWrapper: { position: 'absolute', top: '25%', bottom: '25%', width: 40, alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
+  sideBarBg: { width: 8, flex: 1, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 4, overflow: 'hidden', justifyContent: 'flex-end' },
+  sideBarFill: { width: '100%', backgroundColor: '#e50914' },
   
   slidingBubble: { alignSelf: 'center', backgroundColor: '#e50914', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 8, marginBottom: 10 },
   slidingBubbleText: { color: 'white', fontSize: 16, fontWeight: 'bold', letterSpacing: 1 },
-
-  nextEpAbsoluteBtn: { position: 'absolute', right: 40, bottom: 80, flexDirection: 'row', alignItems: 'center', backgroundColor: '#e50914', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 8, shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 5, shadowOffset: {width:0, height:2} },
-  nextEpAbsoluteText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
 });
