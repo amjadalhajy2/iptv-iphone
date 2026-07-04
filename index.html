@@ -53,7 +53,7 @@
         .card-back { transform: rotateY(180deg); background: rgba(20,20,20,0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2vw; text-align: center; border: 1px solid var(--primary); }
         .card-back-text { color: white; font-size: 3vw; line-height: 1.8; font-weight: bold; }
         
-        /* 🔥 تصميم متابعة المشاهدة الجديد (الصورة واضحة، بدون تظليل، زر التشغيل شفاف ونقي، الاستفاهم بالأسفل) */
+        /* 🔥 تصميم متابعة المشاهدة الجديد (الصورة واضحة، بدون تظليل، زر التشغيل شفاف ونقي، التعجب بالأسفل) */
         .resume-card-layout { display: flex; flex-direction: column; height: 100%; position: relative; background: #111; border-radius: 3vw; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.5); }
         .resume-img-area { position: relative; flex: 1; width: 100%; overflow: hidden; display: flex; justify-content: center; align-items: center; }
         .resume-img-area img { width: 100%; height: 100%; object-fit: cover; position: absolute; top:0; left:0; } 
@@ -208,7 +208,7 @@
 
     function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 4000); }
 
-    // 🔥 الكاش السريع جداً باستخدام IndexedDB / Cache API
+    // 🔥 الكاش السريع جداً 
     async function apiFetch(action, extraParams = '', forceRefresh = false) {
         let domain = iptv.domain || document.getElementById('iptv-domain').value.trim();
         let user = iptv.user || document.getElementById('iptv-user').value.trim();
@@ -227,7 +227,6 @@
                 if (cachedRes) {
                     const cachedTime = cachedRes.headers.get('x-cache-time');
                     const isInfoRequest = action === 'get_vod_info' || action === 'get_series_info';
-                    // تفاصيل الفيلم تحفظ للأبد، والقوائم تحفظ 24 ساعة (86400000 مللي ثانية)
                     if (isInfoRequest || (cachedTime && (Date.now() - parseInt(cachedTime) < 86400000))) { 
                         return await cachedRes.json();
                     }
@@ -285,7 +284,11 @@
         } catch (e) { showToast('❌ بيانات غير صحيحة'); iptv = { domain: '', user: '', pass: '' }; }
     }
 
-    function logout() { localStorage.clear(); location.reload(); }
+    function logout() { 
+        if(confirm('هل أنت متأكد من تسجيل الخروج؟')) {
+            localStorage.clear(); location.reload(); 
+        }
+    }
 
     async function fetchProfilesFromSupabase() {
         document.getElementById('login-screen').classList.add('hidden'); document.getElementById('main-screen').classList.add('hidden'); document.getElementById('profiles-screen').classList.remove('hidden');
@@ -336,6 +339,11 @@
     }
 
     async function loadPage(type) {
+        if(currentTab === type && document.getElementById('main-screen').scrollTop > 0) {
+            document.getElementById('main-screen').scrollTo({top: 0, behavior: 'smooth'});
+            return;
+        }
+
         currentTab = type; updateSearchPlaceholder(type);
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active')); if(event && event.target && event.target.tagName === 'BUTTON') event.target.classList.add('active');
         document.getElementById('search-input').value = '';
@@ -410,8 +418,10 @@
             `;
         } else {
             let progPercent = resumeTime > 0 ? Math.min((resumeTime / 7200) * 100, 100) : 0;
-            
-            // 🔥 تصميم متابعة المشاهدة الجديد (الصورة واضحة، الزر بالمنتصف، شريط التقدم بالأسفل يليه الاستفاهم)
+            if(type === 'series' && item.current_episode_id && item.episodes_progress && item.episodes_progress[item.current_episode_id]) {
+                progPercent = Math.min((item.episodes_progress[item.current_episode_id] / 3000) * 100, 100);
+            }
+
             if (isResumeRow) {
                 return `
                     <div class="card-container" style="pointer-events: none;">
@@ -424,7 +434,7 @@
                             </div>
                             <div class="resume-progress-bar"><div class="resume-progress-fill" style="width: ${progPercent}%"></div></div>
                             <div class="resume-bottom-area" style="pointer-events: auto;" onclick="window.openItemDetails('${itemId}', '${type}');">
-                                <div class="resume-info-icon">?</div>
+                                <div class="resume-info-icon">!</div>
                             </div>
                         </div>
                     </div>
@@ -435,13 +445,15 @@
                 <div class="card" onclick="window.flipCard(this, '${itemId}', '${type}')">
                     <div class="card-front">
                         <img src="${imgUrl}" onerror="this.style.display='none';">
-                        ${resumeTime > 0 ? `<div class="progress-bar"><div class="progress-fill" style="width: ${progPercent}%"></div></div>` : ''}
+                        ${progPercent > 0 ? `<div class="progress-bar"><div class="progress-fill" style="width: ${progPercent}%"></div></div>` : ''}
                     </div>
                     <div class="card-back">
                         <div class="card-back-text">${title}</div>
                         <div class="card-back-text">${rating}</div>
                         <div class="card-back-text dynamic-meta"><span style="font-size:2.5vw; opacity:0.5;">اضغط لعرض التفاصيل</span></div>
-                        <button class="action-btn" style="padding:1.5vh; font-size:3.5vw; margin-top:2vh;" onclick="event.stopPropagation(); window.openItemDetails('${itemId}', '${type}')">التفاصيل</button>
+                        <button class="action-btn" style="padding:1.5vh; font-size:3.5vw; margin-top:2vh;" onclick="event.stopPropagation(); window.openItemDetails('${itemId}', '${type}')">
+                            <div style="border: 0.3vw solid black; border-radius: 50%; width: 5vw; height: 5vw; display: flex; align-items: center; justify-content: center; font-weight: bold;">!</div>
+                        </button>
                     </div>
                 </div>
             `;
@@ -463,10 +475,57 @@
         }
     };
 
+    // 🔥 زر الاستكمال السحري (مباشرة للمشغل)
     window.resumeItem = async (id, type) => {
-        let item = window.allLoadedItems[id];
-        if(item) openDetails(item, type, true);
+        let item = window.allLoadedItems[id] || activeStreamData;
+        if(!item) return;
+        activeStreamData = { ...item, type, id };
+        
+        try {
+            const { data } = await supabaseClient.from('user_activity').select('*').eq('username', iptv.user).eq('profile_name', currentProfile).eq('movie_id', String(id)).maybeSingle();
+            if (data) {
+                activeStreamData.resume_time = data.resume_time || 0;
+                activeStreamData.episodes_progress = data.item_data.episodes_progress || {};
+                activeStreamData.current_episode_id = data.item_data.current_episode_id || null;
+                activeStreamData.current_episode_num = data.item_data.current_episode_num || null;
+                activeStreamData.current_episode_ext = data.item_data.current_episode_ext || 'mkv';
+                activeStreamData.season_num = data.item_data.season_num || null;
+            }
+        } catch (err) {}
+
+        if (type === 'movie') {
+            playStream(id, 'movie', item.container_extension || 'mkv', activeStreamData.resume_time || 0);
+        } else if (type === 'series') {
+            showToast('جاري التجهيز...');
+            try {
+                const data = await apiFetch('get_series_info', `&series_id=${id}`);
+                const episodesObj = data.episodes || {};
+                window.masterEpsList = [];
+                let domain = iptv.domain; if (!domain.startsWith('http')) domain = 'http://' + domain;
+                
+                Object.keys(episodesObj).forEach(s => {
+                    episodesObj[s].forEach(ep => {
+                        window.masterEpsList.push({ id: String(ep.id), episode_num: ep.episode_num, seasonNum: s, container_extension: ep.container_extension || 'mkv', url: `${domain}/series/${iptv.user}/${iptv.pass}/${ep.id}.${ep.container_extension || 'mkv'}` });
+                    });
+                });
+                
+                if(window.masterEpsList.length > 0) {
+                    let targetEpId = activeStreamData.current_episode_id || window.masterEpsList[0].id;
+                    let targetEp = window.masterEpsList.find(x => x.id === targetEpId) || window.masterEpsList[0];
+                    
+                    activeStreamData.current_episode_id = targetEp.id;
+                    activeStreamData.current_episode_num = targetEp.episode_num;
+                    activeStreamData.current_episode_ext = targetEp.container_extension;
+                    activeStreamData.season_num = targetEp.seasonNum;
+                    
+                    let epResumeTime = (activeStreamData.episodes_progress && activeStreamData.episodes_progress[targetEp.id]) ? activeStreamData.episodes_progress[targetEp.id] : (activeStreamData.resume_time || 0);
+                    
+                    playStream(targetEp.id, 'series', targetEp.container_extension, epResumeTime, window.masterEpsList);
+                }
+            } catch(e) {}
+        }
     }
+
     window.openItemDetails = (id, type) => {
         let item = window.allLoadedItems[id];
         if(item) openDetails(item, type);
@@ -532,7 +591,7 @@
     async function openDetails(item, type, autoPlay = false) {
         history.pushState({view: 'details'}, 'Details', '#details');
         
-        // 🔥 مسح (الشبح) للفيلم السابق فوراً
+        // مسح الشبح للفيلم السابق
         document.getElementById('detail-title').innerText = 'جاري التحميل...';
         document.getElementById('detail-poster').src = '';
         document.getElementById('detail-meta').innerHTML = '';
@@ -543,12 +602,13 @@
         document.getElementById('main-screen').classList.add('hidden'); document.getElementById('details-screen').classList.remove('hidden');
         
         const id = item.stream_id || item.series_id || item.id;
-        activeStreamData = { ...item, type, id, resume_time: 0 };
+        activeStreamData = { ...item, type, id, resume_time: 0, episodes_progress: {} };
 
         try {
             const { data } = await supabaseClient.from('user_activity').select('*').eq('username', iptv.user).eq('profile_name', currentProfile).eq('movie_id', String(id)).maybeSingle();
             if (data) {
-                activeStreamData.resume_time = data.resume_time;
+                activeStreamData.resume_time = data.resume_time || 0;
+                activeStreamData.episodes_progress = data.item_data.episodes_progress || {};
                 activeStreamData.current_episode_id = data.item_data.current_episode_id || null;
                 activeStreamData.current_episode_num = data.item_data.current_episode_num || null;
                 activeStreamData.current_episode_ext = data.item_data.current_episode_ext || 'mkv';
@@ -582,7 +642,7 @@
                 if (activeStreamData.current_episode_id && activeStreamData.resume_time > 0) {
                     let sNum = activeStreamData.season_num || '?';
                     let eNum = activeStreamData.current_episode_num || '?';
-                    actionsHtml = `<button class="action-btn" onclick="playStream('${activeStreamData.current_episode_id}', 'series', '${activeStreamData.current_episode_ext}', ${activeStreamData.resume_time})"><svg class="svg-icon"><use href="#icon-play"></use></svg> متابعة مشاهدة S${sNum}:E${eNum}</button>` + actionsHtml;
+                    actionsHtml = `<button class="action-btn" onclick="playStream('${activeStreamData.current_episode_id}', 'series', '${activeStreamData.current_episode_ext}', ${activeStreamData.resume_time})"><svg class="svg-icon"><use href="#icon-play"></use></svg> متابعة المشاهدة S${sNum}:E${eNum}</button>` + actionsHtml;
                     if(autoPlay) playStream(activeStreamData.current_episode_id, 'series', activeStreamData.current_episode_ext, activeStreamData.resume_time);
                 }
                 document.getElementById('series-episodes-col').classList.remove('hidden'); 
@@ -594,37 +654,59 @@
     }
 
     async function checkIfFavorite() {
-        const { data } = await supabaseClient.from('favorites').select('id').eq('username', iptv.user).eq('profile_name', currentProfile).eq('item_id', String(activeStreamData.id));
-        const favBtn = document.getElementById('fav-btn');
-        if (data && data.length > 0) { favBtn.innerHTML = '<svg class="svg-icon"><use href="#icon-close"></use></svg> إزالة من المفضلة'; favBtn.style.background = 'var(--primary)'; favBtn.style.color = 'white'; favBtn.style.border = 'none'; }
+        try {
+            const { data } = await supabaseClient.from('favorites').select('id').eq('username', iptv.user).eq('profile_name', currentProfile).eq('item_id', String(activeStreamData.id));
+            const favBtn = document.getElementById('fav-btn');
+            if (data && data.length > 0) { favBtn.innerHTML = '<svg class="svg-icon"><use href="#icon-close"></use></svg> إزالة من المفضلة'; favBtn.style.background = 'var(--primary)'; favBtn.style.color = 'white'; favBtn.style.border = 'none'; }
+        } catch(e) {}
     }
+
+    // 🔥 حل جذري لمشكلة المفضلات
     async function toggleFavorite() {
-        const { data } = await supabaseClient.from('favorites').select('id').eq('username', iptv.user).eq('profile_name', currentProfile).eq('item_id', String(activeStreamData.id));
-        const favBtn = document.getElementById('fav-btn');
-        if (data && data.length > 0) { await supabaseClient.from('favorites').delete().eq('id', data[0].id); favBtn.innerHTML = '<svg class="svg-icon"><use href="#icon-heart"></use></svg> أضف للمفضلة'; favBtn.style.background = 'transparent'; favBtn.style.border = '1px solid white'; } 
-        else { await supabaseClient.from('favorites').insert([{ username: iptv.user, profile_name: currentProfile, item_id: String(activeStreamData.id), item_type: activeStreamData.type, item_data: activeStreamData }]); favBtn.innerHTML = '<svg class="svg-icon"><use href="#icon-close"></use></svg> إزالة من المفضلة'; favBtn.style.background = 'var(--primary)'; favBtn.style.border = 'none'; }
+        try {
+            const { data } = await supabaseClient.from('favorites').select('id').eq('username', iptv.user).eq('profile_name', currentProfile).eq('item_id', String(activeStreamData.id));
+            const favBtn = document.getElementById('fav-btn');
+            
+            if (data && data.length > 0) { 
+                await supabaseClient.from('favorites').delete().eq('id', data[0].id); 
+                favBtn.innerHTML = '<svg class="svg-icon"><use href="#icon-heart"></use></svg> أضف للمفضلة'; favBtn.style.background = 'transparent'; favBtn.style.border = '1px solid white'; 
+                showToast('تمت الإزالة من المفضلة');
+            } else { 
+                await supabaseClient.from('favorites').insert([{ username: iptv.user, profile_name: currentProfile, item_id: String(activeStreamData.id), item_type: activeStreamData.type, item_data: activeStreamData }]); 
+                favBtn.innerHTML = '<svg class="svg-icon"><use href="#icon-close"></use></svg> إزالة من المفضلة'; favBtn.style.background = 'var(--primary)'; favBtn.style.border = 'none'; 
+                showToast('تم الإضافة إلى المفضلة');
+            }
+        } catch(e) { showToast('خطأ في المفضلات'); }
     }
 
     function renderSeasons(episodesObj) {
         const select = document.getElementById('season-selector'); select.innerHTML = '';
         
-        // 🔥 دمج كل الحلقات مع رقم الموسم الخاص بها لتخطي المواسم السلس
+        // دمج كل الحلقات لتخطي المواسم
         window.masterEpsList = [];
+        let domain = iptv.domain; if (!domain.startsWith('http')) domain = 'http://' + domain;
+
         Object.keys(episodesObj).forEach(s => {
             let opt = document.createElement('option'); opt.value = s; opt.innerText = `الموسم ${s}`; select.appendChild(opt);
-            episodesObj[s].forEach(ep => window.masterEpsList.push({...ep, seasonNum: s}));
+            episodesObj[s].forEach(ep => window.masterEpsList.push({
+                id: String(ep.id), episode_num: ep.episode_num, seasonNum: s, container_extension: ep.container_extension || 'mkv',
+                url: `${domain}/series/${iptv.user}/${iptv.pass}/${ep.id}.${ep.container_extension || 'mkv'}`
+            }));
         });
         
         select.onchange = () => renderEpisodes(episodesObj[select.value], select.value);
         if(Object.keys(episodesObj).length > 0) renderEpisodes(episodesObj[Object.keys(episodesObj)[0]], Object.keys(episodesObj)[0]);
     }
 
-    // 🔥 أزرار الحلقات بكامل العرض مع شريط تقدم بالأسفل
+    // 🔥 أشرطة تقدم الحلقات من مصفوفة episodes_progress 
     function renderEpisodes(epsList, currentSeason) {
         const container = document.getElementById('episodes-container'); container.innerHTML = '';
         epsList.forEach((ep) => {
             const div = document.createElement('button'); div.className = 'ep-card';
-            let epResumeTime = 0; if (activeStreamData && activeStreamData.current_episode_id == ep.id && activeStreamData.resume_time > 0) epResumeTime = activeStreamData.resume_time;
+            
+            let epResumeTime = (activeStreamData.episodes_progress && activeStreamData.episodes_progress[ep.id]) 
+                               ? activeStreamData.episodes_progress[ep.id] 
+                               : ((activeStreamData.current_episode_id == ep.id) ? activeStreamData.resume_time : 0);
             
             let progPercent = epResumeTime > 0 ? Math.min((epResumeTime / 3000) * 100, 100) : 0;
             let pBar = progPercent > 0 ? `<div class="ep-progress"><div class="ep-progress-fill" style="width: ${progPercent}%"></div></div>` : '';
@@ -635,40 +717,29 @@
                 activeStreamData.current_episode_id = String(ep.id); activeStreamData.current_episode_num = ep.episode_num; activeStreamData.current_episode_ext = ep.container_extension || 'mkv'; 
                 activeStreamData.season_num = currentSeason;
                 
-                let globalIdx = window.masterEpsList.findIndex(x => x.id === ep.id);
-                let domain = iptv.domain; if (!domain.startsWith('http')) domain = 'http://' + domain;
-                
-                let nextEpData = null; let prevEpData = null;
-                if(globalIdx > -1 && globalIdx + 1 < window.masterEpsList.length) {
-                    let nextEp = window.masterEpsList[globalIdx + 1];
-                    nextEpData = { id: String(nextEp.id), num: nextEp.episode_num, season: nextEp.seasonNum, url: `${domain}/series/${iptv.user}/${iptv.pass}/${nextEp.id}.${nextEp.container_extension || 'mkv'}` };
-                }
-                if(globalIdx > 0) {
-                    let prevEp = window.masterEpsList[globalIdx - 1];
-                    prevEpData = { id: String(prevEp.id), num: prevEp.episode_num, season: prevEp.seasonNum, url: `${domain}/series/${iptv.user}/${iptv.pass}/${prevEp.id}.${prevEp.container_extension || 'mkv'}` };
-                }
-
-                playStream(ep.id, 'series', ep.container_extension || 'mkv', epResumeTime, nextEpData, prevEpData, currentSeason); 
+                playStream(ep.id, 'series', ep.container_extension || 'mkv', epResumeTime, window.masterEpsList); 
             }; 
             container.appendChild(div);
         });
     }
 
-    function playStream(streamId, type, ext, resumeTime = 0, nextEpisode = null, prevEpisode = null, seasonNum = null) {
+    function playStream(streamId, type, ext, resumeTime = 0, allEpisodes = []) {
         let domain = iptv.domain; if (!domain.startsWith('http')) domain = 'http://' + domain;
         let url = type === 'live' ? `${domain}/${iptv.user}/${iptv.pass}/${streamId}` : `${domain}/${type === 'movie' ? 'movie' : 'series'}/${iptv.user}/${iptv.pass}/${streamId}.${ext}`;
         let parentId = activeStreamData ? activeStreamData.id : streamId;
 
+        history.pushState({view: 'player'}, 'Player', '#player');
+
         if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify({ 
             type: 'PLAY_VIDEO', url: url, videoId: String(parentId), userId: iptv.user, profileName: currentProfile, 
             itemType: type, itemData: activeStreamData, resumeTime: Number(resumeTime), 
-            nextEpisode: nextEpisode, prevEpisode: prevEpisode, seasonNum: seasonNum 
+            allEpisodes: allEpisodes 
         }));
     }
 
     window.addEventListener('popstate', () => { 
         document.getElementById('details-screen').classList.add('hidden'); 
-        document.getElementById('main-screen').classList.remove('hidden'); 
+        // لا نضيف hidden للرئيسية لكي نعود إليها فوراً لو استكملنا من الكارت الخارجي
         silentRefreshContinueWatching();
     });
 </script>
