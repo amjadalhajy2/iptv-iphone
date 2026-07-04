@@ -53,7 +53,9 @@
         .card-back { transform: rotateY(180deg); background: rgba(20,20,20,0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2vw; text-align: center; border: 1px solid var(--primary); }
         .card-back-text { color: white; font-size: 3vw; line-height: 1.8; font-weight: bold; }
         
-        /* 🔥 التصميم الجديد كلياً لبطاقة "متابعة المشاهدة" */
+        /* 🔥 الزر الدائري الجديد في الصورة المنقلبة */
+        .flip-info-btn { position: absolute; bottom: 2vh; background: white; color: black; width: 9vw; height: 9vw; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 6vw; font-weight: bold; font-family: 'Arial', sans-serif; box-shadow: 0 0.5vh 1.5vh rgba(0,0,0,0.8); z-index: 5; }
+
         .resume-card-layout { display: flex; flex-direction: column; height: 100%; width: 100%; background: #111; border-radius: 3vw; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.6); }
         .resume-img-area { position: relative; flex: 1; width: 100%; background: #000; overflow: hidden; }
         .resume-img-area img { width: 100%; height: 100%; object-fit: cover; position: absolute; top:0; left:0; } 
@@ -61,14 +63,13 @@
         .resume-play-center svg { width: 8vw; height: 8vw; margin-left: 1vw; color: white; }
         .resume-progress-bar { width: 100%; height: 1.2vh; background: rgba(255,255,255,0.2); }
         .resume-progress-fill { height: 100%; background: var(--primary); }
-        .resume-bottom-area { height: 7vh; background: #1a1a1a; display: flex; justify-content: center; align-items: center; width: 100%; }
+        .resume-bottom-area { height: 7vh; background: #1a1a1a; display: flex; justify-content: center; align-items: center; width: 100%; cursor: pointer;}
         .resume-info-icon { font-size: 5.5vw; font-weight: bold; font-family: 'Arial', sans-serif; color: #fff; border: 0.4vw solid #fff; width: 7vw; height: 7vw; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
 
         .live-card { width: 100%; text-align: center; background: none; border: none; }
         .row-inner .live-card { width: 42vw; flex: 0 0 auto; } 
         .live-img-wrapper { width: 100%; aspect-ratio: 16 / 9; background: #111; border-radius: 3vw; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid #333; position: relative; }
         .live-img-wrapper img { width: 80%; height: 80%; object-fit: contain; }
-        .live-fallback-text { position: absolute; color: white; font-size: 4vw; font-weight: bold; text-align: center; width: 90%; word-wrap: break-word; }
         .live-title { font-size: 3.5vw; margin-top: 1vh; font-weight: bold; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         .progress-bar { position: absolute; bottom: 0; left:0; width: 100%; height: 1.5vh; background: rgba(0,0,0,0.8); z-index: 20; }
@@ -86,7 +87,6 @@
         .action-btn { display: flex; justify-content: center; align-items: center; gap: 2vw; background: white; color: black; border: none; padding: 2vh; font-size: 4.5vw; font-weight: bold; border-radius: 2vw; width: 100%; text-align: center; margin-bottom: 1vh;}
         .action-btn.outline { background: transparent; color: white; border: 1px solid white; }
         
-        /* 🔥 تصميم أزرار الحلقات بعرض الشاشة مع شريط التقدم */
         .episodes-list { width: 100%; display: flex; flex-direction: column; gap: 2vh; padding-bottom: 5vh; }
         .ep-card { width: 100%; background: rgba(35,35,35,0.85); padding: 3vh 4vw; border-radius: 2vw; display: flex; justify-content: space-between; align-items: center; color: white; font-size: 4.5vw; font-weight: bold; border:none; position: relative; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
         .ep-progress { position: absolute; bottom: 0; left: 0; width: 100%; height: 1vh; background: rgba(0,0,0,0.4); }
@@ -97,104 +97,110 @@
         
         .profiles-header { font-size: 7vw; font-weight: bold; color: white; text-align: center; margin-top: calc(env(safe-area-inset-top) + 10vh); margin-bottom: 5vh; }
         .profiles-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 6vw; padding: 0 5vw; }
-        .profile-card { width: 35vw; aspect-ratio: 1; background: linear-gradient(145deg, #1f1f1f, #121212); border-radius: 4vw; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 5vw; font-weight: bold; color: white; border: 1px solid rgba(255,255,255,0.1); }
+        
+        /* 🔥 تصميم كرت المستخدمين وقائمة الحذف والتعديل */
+        .profile-card { position: relative; width: 35vw; aspect-ratio: 1; background: linear-gradient(145deg, #1f1f1f, #121212); border-radius: 4vw; color: white; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; }
+        .profile-options-btn { position: absolute; top: 1.5vh; left: 2vw; font-size: 5vw; color: white; width: 7vw; height: 7vw; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.6); border-radius: 50%; z-index: 10; font-weight: bold; }
+        .profile-menu { position: absolute; top: 8vh; left: 2vw; background: #222; border-radius: 2vw; overflow: hidden; z-index: 20; box-shadow: 0 1vh 2vh rgba(0,0,0,0.8); min-width: 25vw; border: 1px solid #444; }
+        .profile-menu div { padding: 1.5vh 4vw; font-size: 4vw; color: white; border-bottom: 1px solid #333; text-align: center; }
+        .profile-menu div:last-child { border-bottom: none; color: #e50914; }
     </style>
 </head>
 <body>
-    <svg style="display: none;">
-        <symbol id="icon-user" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></symbol>
-        <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></symbol>
-        <symbol id="icon-search" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></symbol>
-        <symbol id="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></symbol>
-        <symbol id="icon-star" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></symbol>
-        <symbol id="icon-calendar" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></symbol>
-        <symbol id="icon-time" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zM12.5 7H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></symbol>
-        <symbol id="icon-movie" viewBox="0 0 24 24"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></symbol>
-        <symbol id="icon-heart" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></symbol>
-        <symbol id="icon-close" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></symbol>
-    </svg>
+    <div id="app-body" style="width:100%; height:100%; position:absolute;">
+        <svg style="display: none;">
+            <symbol id="icon-user" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></symbol>
+            <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></symbol>
+            <symbol id="icon-search" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></symbol>
+            <symbol id="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></symbol>
+            <symbol id="icon-star" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></symbol>
+            <symbol id="icon-calendar" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></symbol>
+            <symbol id="icon-time" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zM12.5 7H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></symbol>
+            <symbol id="icon-movie" viewBox="0 0 24 24"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></symbol>
+            <symbol id="icon-heart" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></symbol>
+            <symbol id="icon-close" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></symbol>
+        </svg>
 
-    <div id="toast">إشعار</div>
+        <div id="toast">إشعار</div>
 
-    <div id="login-screen" class="scrollable-screen">
-        <div class="login-wrapper">
-            <h1 style="color:var(--primary); font-size:9vw; margin:0 0 2vh 0; font-weight:900;">Amjad Stream</h1>
-            <p style="color:#aaa; font-size:3.5vw; margin-bottom:4vh;">أدخل بيانات الـ IPTV الخاص بك</p>
-            <input type="text" id="iptv-domain" placeholder="رابط السيرفر">
-            <input type="text" id="iptv-user" placeholder="اسم المستخدم">
-            <input type="password" id="iptv-pass" placeholder="كلمة المرور">
-            <button class="action-btn" style="background:var(--primary); color:white; border:none; margin-top:2vh;" onclick="login()">دخول</button>
+        <div id="login-screen" class="scrollable-screen">
+            <div class="login-wrapper">
+                <h1 style="color:var(--primary); font-size:9vw; margin:0 0 2vh 0; font-weight:900;">Amjad Stream</h1>
+                <p style="color:#aaa; font-size:3.5vw; margin-bottom:4vh;">أدخل بيانات الـ IPTV الخاص بك</p>
+                <input type="text" id="iptv-domain" placeholder="رابط السيرفر">
+                <input type="text" id="iptv-user" placeholder="اسم المستخدم">
+                <input type="password" id="iptv-pass" placeholder="كلمة المرور">
+                <button class="action-btn" style="background:var(--primary); color:white; border:none; margin-top:2vh;" onclick="login()">دخول</button>
+            </div>
         </div>
-    </div>
 
-    <div id="profiles-screen" class="scrollable-screen hidden">
-        <h1 class="profiles-header">من يشاهد الآن؟</h1>
-        <div class="profiles-container" id="profiles-list"></div>
-        <div style="padding: 10vw; margin-top: 5vh;">
-            <button class="action-btn" onclick="openAddProfileModal()">إضافة مستخدم</button>
-            <button class="action-btn outline" onclick="logout()">تسجيل الخروج</button>
+        <div id="profiles-screen" class="scrollable-screen hidden">
+            <h1 class="profiles-header">من يشاهد الآن؟</h1>
+            <div class="profiles-container" id="profiles-list"></div>
+            <div style="padding: 10vw; margin-top: 5vh;">
+                <button class="action-btn" onclick="openAddProfileModal()">إضافة مستخدم</button>
+                <button class="action-btn outline" onclick="logout()">تسجيل الخروج</button>
+            </div>
         </div>
-    </div>
 
-    <div id="add-modal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); z-index: 1000; display: flex; justify-content: center; align-items: center;">
-        <div style="background: #1a1a1a; padding: 6vw; border-radius: 4vw; text-align: center; width: 90vw;">
-            <h2 style="color:white; font-size: 5vw;">اسم المستخدم الجديد</h2>
-            <input type="text" id="new-profile-input" style="width:100%; padding:4vw; font-size:4vw; margin:3vh 0; border-radius:2vw; border:none; text-align:center;" placeholder="اكتب الاسم...">
-            <button class="action-btn" onclick="saveNewProfile()">حفظ وإنشاء</button>
-            <button class="action-btn outline" onclick="document.getElementById('add-modal').classList.add('hidden')">إلغاء</button>
+        <div id="add-modal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); z-index: 1000; display: flex; justify-content: center; align-items: center;">
+            <div style="background: #1a1a1a; padding: 6vw; border-radius: 4vw; text-align: center; width: 90vw;">
+                <h2 id="modal-title" style="color:white; font-size: 5vw;">اسم المستخدم الجديد</h2>
+                <input type="text" id="new-profile-input" style="width:100%; padding:4vw; font-size:4vw; margin:3vh 0; border-radius:2vw; border:none; text-align:center;" placeholder="اكتب الاسم...">
+                <button class="action-btn" onclick="saveNewProfile()">حفظ</button>
+                <button class="action-btn outline" onclick="document.getElementById('add-modal').classList.add('hidden')">إلغاء</button>
+            </div>
         </div>
-    </div>
 
-    <div id="main-screen" class="scrollable-screen hidden">
-        <header>
-            <div class="top-bar">
-                <div class="logo">Amjad Stream</div>
-                <div class="user-section">
-                    <button class="refresh-btn" onclick="forceRefreshCache()"><svg class="svg-icon" style="width:6vw;height:6vw;"><use href="#icon-refresh"></use></svg></button>
-                    <div class="user-badge" onclick="changeProfile()">
-                        <svg class="svg-icon"><use href="#icon-user"></use></svg> <span id="current-profile-name"></span>
+        <div id="main-screen" class="scrollable-screen hidden">
+            <header>
+                <div class="top-bar">
+                    <div class="logo">Amjad Stream</div>
+                    <div class="user-section">
+                        <button class="refresh-btn" onclick="forceRefreshCache()"><svg class="svg-icon" style="width:6vw;height:6vw;"><use href="#icon-refresh"></use></svg></button>
+                        <div class="user-badge" onclick="changeProfile()">
+                            <svg class="svg-icon"><use href="#icon-user"></use></svg> <span id="current-profile-name"></span>
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <div class="nav-links">
-                <button class="nav-item active" onclick="loadPage('movies')">أفلام</button>
-                <button class="nav-item" onclick="loadPage('series')">مسلسلات</button>
-                <button class="nav-item" onclick="loadPage('live')">بث مباشر</button>
-                <button class="nav-item" onclick="loadPage('favorites')">مفضلاتي</button>
-            </div>
-            <div class="search-box">
-                <svg class="svg-icon search-icon"><use href="#icon-search"></use></svg>
-                <input type="text" id="search-input" placeholder="ابحث في الافلام..." onkeyup="handleSearch()">
-            </div>
-        </header>
+                
+                <div class="nav-links">
+                    <button class="nav-item active" onclick="loadPage('movies')">أفلام</button>
+                    <button class="nav-item" onclick="loadPage('series')">مسلسلات</button>
+                    <button class="nav-item" onclick="loadPage('live')">بث مباشر</button>
+                    <button class="nav-item" onclick="loadPage('favorites')">مفضلاتي</button>
+                </div>
+                <div class="search-box">
+                    <svg class="svg-icon search-icon"><use href="#icon-search"></use></svg>
+                    <input type="text" id="search-input" placeholder="ابحث في الافلام..." onkeyup="handleSearch()">
+                </div>
+            </header>
 
-        <div id="main-content">
-            <div id="continue-watching-container"></div>
-            <div id="categories-container"></div>
-            <div id="grid-container" class="grid-container"></div>
-            <div id="load-more-container"></div>
-        </div>
-    </div>
-
-    <div id="details-screen" class="scrollable-screen hidden">
-        <div class="details-layout">
-            <img id="detail-poster" class="details-poster" src="">
-            <h1 id="detail-title" class="details-title">جاري التحميل...</h1>
-            
-            <div class="details-meta-box" id="detail-meta"></div>
-            <div style="width: 100%;" id="detail-actions"></div>
-            
-            <p style="font-size: 4vw; line-height: 1.6; text-align: justify; padding: 0 2vw;" id="detail-desc"></p>
-            
-            <div style="width:100%" id="series-episodes-col" class="hidden">
-                <select id="season-selector" style="width:100%; padding:2vh; background:#222; color:white; font-size:4vw; border-radius:2vw; margin-bottom:2vh;"></select>
-                <div id="episodes-container" class="episodes-list"></div>
+            <div id="main-content">
+                <div id="continue-watching-container"></div>
+                <div id="categories-container"></div>
+                <div id="grid-container" class="grid-container"></div>
+                <div id="load-more-container"></div>
             </div>
         </div>
-    </div>
 
-<script>
+        <div id="details-screen" class="scrollable-screen hidden">
+            <div class="details-layout">
+                <img id="detail-poster" class="details-poster" src="">
+                <h1 id="detail-title" class="details-title">جاري التحميل...</h1>
+                
+                <div class="details-meta-box" id="detail-meta"></div>
+                <div style="width: 100%;" id="detail-actions"></div>
+                
+                <p style="font-size: 4vw; line-height: 1.6; text-align: justify; padding: 0 2vw;" id="detail-desc"></p>
+                
+                <div style="width:100%" id="series-episodes-col" class="hidden">
+                    <select id="season-selector" style="width:100%; padding:2vh; background:#222; color:white; font-size:4vw; border-radius:2vw; margin-bottom:2vh;"></select>
+                    <div id="episodes-container" class="episodes-list"></div>
+                </div>
+            </div>
+        </div>
+    </div> <script>
     const supabaseUrl = 'https://kpfymvtyqbyjmlqfgujo.supabase.co';
     const supabaseKey = 'sb_publishable_g7dHfpmPHcQwAWsO9FFuGw_4lG8fyLc';
     const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
@@ -206,10 +212,15 @@
 
     window.allLoadedItems = {};
     window.pendingFetches = {};
+    let editingProfileName = null;
 
     function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 4000); }
 
-    // 🔥 الكاش السريع جداً باستخدام IndexedDB / Cache API
+    // إخفاء قوائم المستخدمين عند الضغط في أي مكان
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.profile-menu').forEach(m => m.classList.add('hidden'));
+    });
+
     async function apiFetch(action, extraParams = '', forceRefresh = false) {
         let domain = iptv.domain || document.getElementById('iptv-domain').value.trim();
         let user = iptv.user || document.getElementById('iptv-user').value.trim();
@@ -228,7 +239,6 @@
                 if (cachedRes) {
                     const cachedTime = cachedRes.headers.get('x-cache-time');
                     const isInfoRequest = action === 'get_vod_info' || action === 'get_series_info';
-                    // تفاصيل الفيلم تحفظ للأبد، والقوائم تحفظ 24 ساعة (86400000 مللي ثانية)
                     if (isInfoRequest || (cachedTime && (Date.now() - parseInt(cachedTime) < 86400000))) { 
                         return await cachedRes.json();
                     }
@@ -303,18 +313,72 @@
         } catch (e) {}
     }
 
+    // 🔥 تصميم كرت المستخدمين مع التعديل والحذف
     function renderProfileCard(name) {
-        const card = document.createElement('button'); card.className = 'profile-card'; 
-        card.innerHTML = `<svg class="svg-icon" style="width:10vw;height:10vw;margin-bottom:1vh;"><use href="#icon-user"></use></svg><span>${name}</span>`;
-        card.onclick = () => { currentProfile = name; document.getElementById('current-profile-name').innerText = name; document.getElementById('profiles-screen').classList.add('hidden'); document.getElementById('main-screen').classList.remove('hidden'); loadPage('movies'); };
+        const card = document.createElement('div'); card.className = 'profile-card'; 
+        card.innerHTML = `
+            <div class="profile-options-btn" onclick="event.stopPropagation(); window.toggleProfileMenu('${name}')">⋮</div>
+            <div id="menu-${name}" class="profile-menu hidden">
+                <div onclick="event.stopPropagation(); window.openEditProfileModal('${name}')">تعديل</div>
+                <div onclick="event.stopPropagation(); window.deleteProfile('${name}')">حذف</div>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%;" onclick="selectProfile('${name}')">
+                <svg class="svg-icon" style="width:10vw;height:10vw;margin-bottom:1vh;"><use href="#icon-user"></use></svg>
+                <span style="font-size: 5vw; font-weight: bold;">${name}</span>
+            </div>
+        `;
         document.getElementById('profiles-list').appendChild(card);
     }
 
-    function openAddProfileModal() { document.getElementById('new-profile-input').value = ''; document.getElementById('add-modal').classList.remove('hidden'); }
-    async function saveNewProfile() {
-        let name = document.getElementById('new-profile-input').value.trim();
-        if(name) { document.getElementById('add-modal').classList.add('hidden'); await supabaseClient.from('profiles').upsert({ username: iptv.user, profile_name: name }, { onConflict: 'username,profile_name' }); fetchProfilesFromSupabase(); }
+    window.toggleProfileMenu = (name) => {
+        document.querySelectorAll('.profile-menu').forEach(m => { if(m.id !== `menu-${name}`) m.classList.add('hidden'); });
+        document.getElementById(`menu-${name}`).classList.toggle('hidden');
+    };
+
+    function selectProfile(name) {
+        currentProfile = name; document.getElementById('current-profile-name').innerText = name; document.getElementById('profiles-screen').classList.add('hidden'); document.getElementById('main-screen').classList.remove('hidden'); loadPage('movies');
     }
+
+    function openAddProfileModal() { 
+        editingProfileName = null;
+        document.getElementById('modal-title').innerText = 'اسم المستخدم الجديد';
+        document.getElementById('new-profile-input').value = ''; 
+        document.getElementById('add-modal').classList.remove('hidden'); 
+    }
+
+    window.openEditProfileModal = (oldName) => {
+        editingProfileName = oldName;
+        document.getElementById('menu-' + oldName).classList.add('hidden');
+        document.getElementById('modal-title').innerText = 'تعديل اسم المستخدم';
+        document.getElementById('new-profile-input').value = oldName;
+        document.getElementById('add-modal').classList.remove('hidden');
+    };
+
+    async function saveNewProfile() {
+        let newName = document.getElementById('new-profile-input').value.trim();
+        if(!newName) return;
+        document.getElementById('add-modal').classList.add('hidden'); 
+        
+        if (editingProfileName) {
+            await supabaseClient.from('profiles').update({ profile_name: newName }).eq('username', iptv.user).eq('profile_name', editingProfileName);
+            await supabaseClient.from('user_activity').update({ profile_name: newName }).eq('username', iptv.user).eq('profile_name', editingProfileName);
+            await supabaseClient.from('favorites').update({ profile_name: newName }).eq('username', iptv.user).eq('profile_name', editingProfileName);
+        } else {
+            await supabaseClient.from('profiles').upsert({ username: iptv.user, profile_name: newName }, { onConflict: 'username,profile_name' }); 
+        }
+        fetchProfilesFromSupabase();
+    }
+
+    window.deleteProfile = async (name) => {
+        document.getElementById('menu-' + name).classList.add('hidden');
+        if(confirm(`هل أنت متأكد من حذف المستخدم "${name}"؟`)) {
+            await supabaseClient.from('profiles').delete().eq('username', iptv.user).eq('profile_name', name);
+            await supabaseClient.from('user_activity').delete().eq('username', iptv.user).eq('profile_name', name);
+            await supabaseClient.from('favorites').delete().eq('username', iptv.user).eq('profile_name', name);
+            fetchProfilesFromSupabase();
+        }
+    };
+
     function changeProfile() { fetchProfilesFromSupabase(); }
 
     function updateSearchPlaceholder(type) {
@@ -341,7 +405,6 @@
     }
 
     async function loadPage(type) {
-        // 🔥 الانتقال السلس لأعلى الصفحة عند النقر على نفس القسم
         if(currentTab === type && document.getElementById('main-screen').scrollTop > 0) {
             document.getElementById('main-screen').scrollTo({top: 0, behavior: 'smooth'});
             return;
@@ -426,7 +489,6 @@
             }
 
             if (isResumeRow) {
-                // 🔥 تصميم متابعة المشاهدة الجديد كلياً والواضح
                 return `
                     <div class="card-container" style="pointer-events: auto;" onclick="window.resumeItem('${itemId}', '${type}')">
                         <div class="resume-card-layout">
@@ -453,17 +515,16 @@
                     </div>
                     <div class="card-back">
                         <div class="card-back-text">${title}</div>
-                        <div class="card-back-text">${rating}</div>
-                        <div class="card-back-text dynamic-meta"><span style="font-size:2.5vw; opacity:0.5;">اضغط لعرض التفاصيل</span></div>
-                        <button class="action-btn" style="padding:1.5vh; font-size:4.5vw; margin-top:2vh;" onclick="event.stopPropagation(); window.openItemDetails('${itemId}', '${type}')">
-                            <div style="border: 0.3vw solid black; border-radius: 50%; width: 5.5vw; height: 5.5vw; display: flex; align-items: center; justify-content: center; font-weight: bold;">!</div>
-                        </button>
+                        <div class="card-back-text" style="margin-top:1vh;">${rating}</div>
+                        <div class="card-back-text dynamic-meta" style="margin-top:1vh;"><span style="font-size:2.5vw; opacity:0.5;">اضغط للتحميل</span></div>
+                        <div class="flip-info-btn" onclick="event.stopPropagation(); window.openItemDetails('${itemId}', '${type}')">!</div>
                     </div>
                 </div>
             `;
         }
     }
 
+    // 🔥 ذكاء المسلسلات في الصورة المنقلبة: إذا موسم واحد يعرض الحلقات، وإذا أكثر يعرض المواسم
     window.flipCard = (el, id, type) => {
         el.classList.toggle('flipped');
         if (el.classList.contains('flipped') && !el.dataset.fetched) {
@@ -473,13 +534,24 @@
             let action = type === 'movie' ? `get_vod_info&vod_id=${id}` : `get_series_info&series_id=${id}`;
             apiFetch(action).then(data => {
                 const info = data.info || {};
-                let durOrSeas = type === 'movie' ? (info.duration || info.runtime || '-') : (data.episodes ? `${Object.keys(data.episodes).length} مواسم` : '1 موسم');
+                let durOrSeas = '-';
+                if (type === 'movie') {
+                    durOrSeas = info.duration || info.runtime || '-';
+                } else {
+                    if (data.episodes) {
+                        const seasons = Object.keys(data.episodes);
+                        if (seasons.length === 1) {
+                            durOrSeas = `${data.episodes[seasons[0]].length} حلقة`;
+                        } else {
+                            durOrSeas = `${seasons.length} مواسم`;
+                        }
+                    }
+                }
                 metaDiv.innerHTML = `<svg class="svg-icon"><use href="#icon-time"></use></svg> ${durOrSeas}`;
             }).catch(() => metaDiv.innerHTML = "");
         }
     };
 
-    // 🔥 الاستكمال المباشر السحري (Direct Play) 
     window.resumeItem = async (id, type) => {
         let item = window.allLoadedItems[id] || activeStreamData;
         if(!item) return;
@@ -595,7 +667,6 @@
     async function openDetails(item, type, autoPlay = false) {
         history.pushState({view: 'details'}, 'Details', '#details');
         
-        // 🔥 مسح (الشبح) فوراً
         document.getElementById('detail-title').innerText = 'جاري التحميل...';
         document.getElementById('detail-poster').src = '';
         document.getElementById('detail-meta').innerHTML = '';
@@ -628,7 +699,20 @@
             const info = data.info || {};
             document.getElementById('detail-desc').innerText = info.plot || info.description || 'لا يوجد وصف متاح.';
             
-            const durOrSeas = type === 'movie' ? (info.duration || info.runtime || '-') : (data.episodes ? `${Object.keys(data.episodes).length} مواسم` : '-');
+            let durOrSeas = '-';
+            if (type === 'movie') {
+                durOrSeas = info.duration || info.runtime || '-';
+            } else {
+                if (data.episodes) {
+                    const seasons = Object.keys(data.episodes);
+                    if (seasons.length === 1) {
+                        durOrSeas = `${data.episodes[seasons[0]].length} حلقة`;
+                    } else {
+                        durOrSeas = `${seasons.length} مواسم`;
+                    }
+                }
+            }
+
             document.getElementById('detail-meta').innerHTML = `
                 <div class="meta-item">التقييم<span class="meta-val"><svg class="svg-icon" style="color:var(--primary)"><use href="#icon-star"></use></svg> ${info.rating || '-'}</span></div>
                 <div class="meta-item">الإصدار<span class="meta-val"><svg class="svg-icon"><use href="#icon-calendar"></use></svg> ${info.year || info.releasedate || '-'}</span></div>
@@ -705,7 +789,6 @@
         epsList.forEach((ep) => {
             const div = document.createElement('button'); div.className = 'ep-card';
             
-            // 🔥 شريط تقدم لكل الحلقات
             let epResumeTime = (activeStreamData.episodes_progress && activeStreamData.episodes_progress[ep.id]) 
                                ? activeStreamData.episodes_progress[ep.id] 
                                : ((activeStreamData.current_episode_id == ep.id) ? activeStreamData.resume_time : 0);
@@ -738,9 +821,10 @@
         }));
     }
 
+    // 🔥 حل جذري للشاشة السوداء: إظهار الشاشة الرئيسية عند الرجوع
     window.addEventListener('popstate', () => { 
         document.getElementById('details-screen').classList.add('hidden'); 
-        // تحديث صامت للمشاهدة لتجنب تحريك الشاشة
+        document.getElementById('main-screen').classList.remove('hidden'); 
         silentRefreshContinueWatching();
     });
 </script>
