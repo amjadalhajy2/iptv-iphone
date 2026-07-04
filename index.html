@@ -45,7 +45,7 @@
         .row-inner { display: flex; gap: 3vw; overflow-x: auto; padding: 1vh 4vw; scroll-behavior: smooth; }
         
         .card-container { perspective: 1000px; border-radius: 3vw; position: relative; width: 100%; aspect-ratio: 2 / 3; background: transparent; }
-        .row-inner .card-container { width: 35vw; flex: 0 0 auto; } /* تم التكبير كما طلبت */
+        .row-inner .card-container { width: 35vw; flex: 0 0 auto; }
         .card { width: 100%; height: 100%; position: relative; transition: transform 0.6s; transform-style: preserve-3d; border-radius: 3vw; box-shadow: 0 4px 8px rgba(0,0,0,0.5); border: none; }
         .card.flipped { transform: rotateY(180deg); }
         .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 3vw; overflow: hidden; background: #1a1a1a; }
@@ -53,16 +53,16 @@
         .card-back { transform: rotateY(180deg); background: rgba(20,20,20,0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2vw; text-align: center; border: 1px solid var(--primary); }
         .card-back-text { color: white; font-size: 3vw; line-height: 1.8; font-weight: bold; }
         
-        /* 🔥 تصميم متابعة المشاهدة الجديد والمحسن */
-        .resume-card-layout { display: flex; flex-direction: column; height: 100%; position: relative; background: #111; border-radius: 3vw; overflow: hidden;}
-        .resume-img-area { position: relative; flex: 1; width: 100%; overflow: hidden; }
-        .resume-img-area img { width: 100%; height: 100%; object-fit: cover; } 
-        .resume-play-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.3); width: 14vw; height: 14vw; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 0.5vw solid white; z-index: 10; }
-        .resume-play-center svg { width: 7vw; height: 7vw; margin-left: 1vw; color: white; }
-        .resume-progress-bar { width: 100%; height: 1.2vh; background: rgba(255,255,255,0.2); }
+        /* 🔥 تصميم متابعة المشاهدة الجديد (الصورة واضحة، بدون تظليل، زر التشغيل شفاف ونقي، الاستفاهم بالأسفل) */
+        .resume-card-layout { display: flex; flex-direction: column; height: 100%; position: relative; background: #111; border-radius: 3vw; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.5); }
+        .resume-img-area { position: relative; flex: 1; width: 100%; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        .resume-img-area img { width: 100%; height: 100%; object-fit: cover; position: absolute; top:0; left:0; } 
+        .resume-play-center { position: relative; background: rgba(0,0,0,0.4); width: 14vw; height: 14vw; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 0.5vw solid white; z-index: 10; box-shadow: 0 0 15px rgba(0,0,0,0.8); }
+        .resume-play-center svg { width: 8vw; height: 8vw; margin-left: 1vw; color: white; }
+        .resume-progress-bar { width: 100%; height: 1.5vh; background: rgba(255,255,255,0.2); }
         .resume-progress-fill { height: 100%; background: var(--primary); }
         .resume-bottom-area { height: 6vh; background: #1a1a1a; display: flex; justify-content: center; align-items: center; }
-        .resume-info-icon { font-size: 4vw; font-weight: bold; font-family: sans-serif; color: #ccc; border: 0.2vw solid #ccc; width: 6vw; height: 6vw; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
+        .resume-info-icon { font-size: 4vw; font-weight: bold; font-family: sans-serif; color: #ccc; border: 0.3vw solid #ccc; width: 6vw; height: 6vw; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
 
         .live-card { width: 100%; text-align: center; background: none; border: none; }
         .row-inner .live-card { width: 42vw; flex: 0 0 auto; } 
@@ -85,10 +85,10 @@
         .action-btn { display: flex; justify-content: center; align-items: center; gap: 2vw; background: white; color: black; border: none; padding: 2vh; font-size: 4.5vw; font-weight: bold; border-radius: 2vw; width: 100%; text-align: center; margin-bottom: 1vh;}
         .action-btn.outline { background: transparent; color: white; border: 1px solid white; }
         
-        /* 🔥 أزرار الحلقات بعرض الشاشة مع شريط التقدم */
-        .episodes-list { width: 100%; display: flex; flex-direction: column; gap: 2vh; }
-        .ep-card { width: 100%; background: rgba(35,35,35,0.85); padding: 2.5vh 4vw; border-radius: 2vw; display: flex; justify-content: space-between; align-items: center; color: white; font-size: 4vw; border:none; position: relative; overflow: hidden; }
-        .ep-progress { position: absolute; bottom: 0; left: 0; width: 100%; height: 0.8vh; background: rgba(0,0,0,0.5); }
+        /* 🔥 تصميم أزرار الحلقات لتملأ الشاشة مع شريط التقدم بأسفلها */
+        .episodes-list { width: 100%; display: flex; flex-direction: column; gap: 2vh; padding-bottom: 5vh; }
+        .ep-card { width: 100%; background: rgba(35,35,35,0.85); padding: 2.5vh 4vw; border-radius: 2vw; display: flex; justify-content: space-between; align-items: center; color: white; font-size: 4.5vw; font-weight: bold; border:none; position: relative; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        .ep-progress { position: absolute; bottom: 0; left: 0; width: 100%; height: 1vh; background: rgba(0,0,0,0.4); }
         .ep-progress-fill { height: 100%; background: var(--primary); }
 
         .login-wrapper { background: rgba(20, 20, 20, 0.9); padding: 6vw; border-radius: 4vw; text-align: center; width: 90vw; margin: 20vh auto; }
@@ -105,7 +105,6 @@
         <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></symbol>
         <symbol id="icon-search" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></symbol>
         <symbol id="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></symbol>
-        <symbol id="icon-info" viewBox="0 0 24 24"><path d="M11 17h2v-6h-2v6zm1-15C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM11 9h2V7h-2v2z"/></symbol>
         <symbol id="icon-star" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></symbol>
         <symbol id="icon-calendar" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></symbol>
         <symbol id="icon-time" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zM12.5 7H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></symbol>
@@ -209,7 +208,7 @@
 
     function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 4000); }
 
-    // 🔥 استخدام Cache API المتقدم للحصول على سرعة فائقة في العرض وتجنب حظر السيرفر
+    // 🔥 الكاش السريع جداً باستخدام IndexedDB / Cache API
     async function apiFetch(action, extraParams = '', forceRefresh = false) {
         let domain = iptv.domain || document.getElementById('iptv-domain').value.trim();
         let user = iptv.user || document.getElementById('iptv-user').value.trim();
@@ -228,7 +227,7 @@
                 if (cachedRes) {
                     const cachedTime = cachedRes.headers.get('x-cache-time');
                     const isInfoRequest = action === 'get_vod_info' || action === 'get_series_info';
-                    // تفاصيل الأفلام تحفظ للأبد لعدم حظر السيرفر، والقوائم تحفظ 24 ساعة
+                    // تفاصيل الفيلم تحفظ للأبد، والقوائم تحفظ 24 ساعة (86400000 مللي ثانية)
                     if (isInfoRequest || (cachedTime && (Date.now() - parseInt(cachedTime) < 86400000))) { 
                         return await cachedRes.json();
                     }
@@ -277,7 +276,7 @@
         if(!d || !u || !p) { showToast('أدخل جميع البيانات'); return; }
         try {
             iptv = {domain: d, user: u, pass: p};
-            const data = await apiFetch('', '', true); // لا تستخدم الكاش في الدخول
+            const data = await apiFetch('', '', true);
             if (data && data.user_info && data.user_info.auth === 1) {
                 let cDom = d.endsWith('/') ? d.slice(0, -1) : d; if (!cDom.startsWith('http')) cDom = 'http://' + cDom;
                 iptv.domain = cDom; localStorage.setItem('iptv_domain', cDom); localStorage.setItem('iptv_user', u); localStorage.setItem('iptv_pass', p);
@@ -412,17 +411,18 @@
         } else {
             let progPercent = resumeTime > 0 ? Math.min((resumeTime / 7200) * 100, 100) : 0;
             
+            // 🔥 تصميم متابعة المشاهدة الجديد (الصورة واضحة، الزر بالمنتصف، شريط التقدم بالأسفل يليه الاستفاهم)
             if (isResumeRow) {
                 return `
                     <div class="card-container" style="pointer-events: none;">
                         <div class="resume-card-layout">
-                            <div class="resume-img-area" style="pointer-events: auto;">
+                            <div class="resume-img-area" style="pointer-events: auto;" onclick="window.resumeItem('${itemId}', '${type}');">
                                 <img src="${imgUrl}" onerror="this.style.display='none';">
-                                <div class="resume-play-center" onclick="window.resumeItem('${itemId}', '${type}');">
+                                <div class="resume-play-center">
                                     <svg class="svg-icon"><use href="#icon-play"></use></svg>
                                 </div>
                             </div>
-                            ${resumeTime > 0 ? `<div class="resume-progress-bar"><div class="resume-progress-fill" style="width: ${progPercent}%"></div></div>` : ''}
+                            <div class="resume-progress-bar"><div class="resume-progress-fill" style="width: ${progPercent}%"></div></div>
                             <div class="resume-bottom-area" style="pointer-events: auto;" onclick="window.openItemDetails('${itemId}', '${type}');">
                                 <div class="resume-info-icon">?</div>
                             </div>
@@ -518,10 +518,9 @@
                     if(!obj) return;
                     
                     const wrap = document.createElement('div'); wrap.className = row.item_type === 'live' ? 'live-card' : 'card-container';
-                    // حفظ معلومات المسلسل (الموسم)
                     if(row.item_type === 'series') obj.season_num = obj.season_num || row.item_data.season_num;
                     
-                    wrap.innerHTML = createCardHtml(obj, row.item_type, tableName === 'user_activity' ? row.resume_time : 0, tableName === 'user_activity');
+                    wrap.innerHTML = createCardHtml(obj, row.item_type, tableName === 'user_activity' ? row.resume_time : 0, true);
                     if(row.item_type === 'live') wrap.onclick = () => playStream(obj.stream_id || obj.id, 'live', '');
                     inner.appendChild(wrap);
                 });
@@ -533,7 +532,7 @@
     async function openDetails(item, type, autoPlay = false) {
         history.pushState({view: 'details'}, 'Details', '#details');
         
-        // 🔥 مسح الشبح (التفاصيل القديمة) فوراً قبل العرض
+        // 🔥 مسح (الشبح) للفيلم السابق فوراً
         document.getElementById('detail-title').innerText = 'جاري التحميل...';
         document.getElementById('detail-poster').src = '';
         document.getElementById('detail-meta').innerHTML = '';
@@ -581,7 +580,6 @@
                 if(autoPlay) playStream(id, 'movie', item.container_extension || 'mkv', activeStreamData.resume_time || 0);
             } else if (type === 'series') {
                 if (activeStreamData.current_episode_id && activeStreamData.resume_time > 0) {
-                    // عرض S2:E5 في زر الاستكمال للمسلسلات
                     let sNum = activeStreamData.season_num || '?';
                     let eNum = activeStreamData.current_episode_num || '?';
                     actionsHtml = `<button class="action-btn" onclick="playStream('${activeStreamData.current_episode_id}', 'series', '${activeStreamData.current_episode_ext}', ${activeStreamData.resume_time})"><svg class="svg-icon"><use href="#icon-play"></use></svg> متابعة مشاهدة S${sNum}:E${eNum}</button>` + actionsHtml;
@@ -610,7 +608,7 @@
     function renderSeasons(episodesObj) {
         const select = document.getElementById('season-selector'); select.innerHTML = '';
         
-        // 🔥 بناء القائمة الشاملة للتخطي بين المواسم (Cross-Season)
+        // 🔥 دمج كل الحلقات مع رقم الموسم الخاص بها لتخطي المواسم السلس
         window.masterEpsList = [];
         Object.keys(episodesObj).forEach(s => {
             let opt = document.createElement('option'); opt.value = s; opt.innerText = `الموسم ${s}`; select.appendChild(opt);
@@ -621,7 +619,7 @@
         if(Object.keys(episodesObj).length > 0) renderEpisodes(episodesObj[Object.keys(episodesObj)[0]], Object.keys(episodesObj)[0]);
     }
 
-    // 🔥 تصميم أزرار الحلقات الشامل وشريط التقدم
+    // 🔥 أزرار الحلقات بكامل العرض مع شريط تقدم بالأسفل
     function renderEpisodes(epsList, currentSeason) {
         const container = document.getElementById('episodes-container'); container.innerHTML = '';
         epsList.forEach((ep) => {
@@ -637,43 +635,34 @@
                 activeStreamData.current_episode_id = String(ep.id); activeStreamData.current_episode_num = ep.episode_num; activeStreamData.current_episode_ext = ep.container_extension || 'mkv'; 
                 activeStreamData.season_num = currentSeason;
                 
-                // البحث في القائمة الشاملة لإرسال الحلقة القادمة والسابقة (حتى لو في موسم آخر)
                 let globalIdx = window.masterEpsList.findIndex(x => x.id === ep.id);
                 let domain = iptv.domain; if (!domain.startsWith('http')) domain = 'http://' + domain;
                 
                 let nextEpData = null; let prevEpData = null;
-                // حلقة قادمة ومتبقية لزر (الحلقة القادمة)
-                let remainingEps = [];
                 if(globalIdx > -1 && globalIdx + 1 < window.masterEpsList.length) {
                     let nextEp = window.masterEpsList[globalIdx + 1];
                     nextEpData = { id: String(nextEp.id), num: nextEp.episode_num, season: nextEp.seasonNum, url: `${domain}/series/${iptv.user}/${iptv.pass}/${nextEp.id}.${nextEp.container_extension || 'mkv'}` };
-                    
-                    for(let i = globalIdx + 1; i < window.masterEpsList.length; i++) {
-                        let rep = window.masterEpsList[i];
-                        remainingEps.push({ id: String(rep.id), num: rep.episode_num, season: rep.seasonNum, url: `${domain}/series/${iptv.user}/${iptv.pass}/${rep.id}.${rep.container_extension || 'mkv'}` });
-                    }
                 }
                 if(globalIdx > 0) {
                     let prevEp = window.masterEpsList[globalIdx - 1];
                     prevEpData = { id: String(prevEp.id), num: prevEp.episode_num, season: prevEp.seasonNum, url: `${domain}/series/${iptv.user}/${iptv.pass}/${prevEp.id}.${prevEp.container_extension || 'mkv'}` };
                 }
 
-                playStream(ep.id, 'series', ep.container_extension || 'mkv', epResumeTime, nextEpData, prevEpData, currentSeason, remainingEps); 
+                playStream(ep.id, 'series', ep.container_extension || 'mkv', epResumeTime, nextEpData, prevEpData, currentSeason); 
             }; 
             container.appendChild(div);
         });
     }
 
-    function playStream(streamId, type, ext, resumeTime = 0, nextEpisode = null, prevEpisode = null, seasonNum = null, remainingEps = []) {
+    function playStream(streamId, type, ext, resumeTime = 0, nextEpisode = null, prevEpisode = null, seasonNum = null) {
         let domain = iptv.domain; if (!domain.startsWith('http')) domain = 'http://' + domain;
         let url = type === 'live' ? `${domain}/${iptv.user}/${iptv.pass}/${streamId}` : `${domain}/${type === 'movie' ? 'movie' : 'series'}/${iptv.user}/${iptv.pass}/${streamId}.${ext}`;
-        
         let parentId = activeStreamData ? activeStreamData.id : streamId;
 
         if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify({ 
             type: 'PLAY_VIDEO', url: url, videoId: String(parentId), userId: iptv.user, profileName: currentProfile, 
             itemType: type, itemData: activeStreamData, resumeTime: Number(resumeTime), 
-            nextEpisode: nextEpisode, prevEpisode: prevEpisode, seasonNum: seasonNum, remainingEps: remainingEps 
+            nextEpisode: nextEpisode, prevEpisode: prevEpisode, seasonNum: seasonNum 
         }));
     }
 
