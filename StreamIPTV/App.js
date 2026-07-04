@@ -82,8 +82,9 @@ export default function App() {
     if (!videoData || !videoData.userId || currentTimeSec <= 0) return;
     try {
       let epsProg = videoData.itemData?.episodes_progress || {};
+      // 🔥 تأمين المعرّف كنص لحل مشكلة عدم استكمال الحلقات
       if(videoData.itemType === 'series' && videoData.itemData?.current_episode_id) {
-          epsProg[videoData.itemData.current_episode_id] = currentTimeSec;
+          epsProg[String(videoData.itemData.current_episode_id)] = currentTimeSec;
       }
       let updatedItemData = { ...videoData.itemData, episodes_progress: epsProg };
 
@@ -127,8 +128,8 @@ export default function App() {
     const targetIdx = idx + direction;
     if(targetIdx >= 0 && targetIdx < videoData.allEpisodes.length) {
         const ep = videoData.allEpisodes[targetIdx];
-        let updatedItemData = { ...videoData.itemData, current_episode_id: ep.id, current_episode_num: ep.episode_num, season_num: ep.seasonNum };
-        let targetResumeTime = updatedItemData.episodes_progress?.[ep.id] || 0;
+        let updatedItemData = { ...videoData.itemData, current_episode_id: String(ep.id), current_episode_num: ep.episode_num, season_num: ep.seasonNum };
+        let targetResumeTime = updatedItemData.episodes_progress?.[String(ep.id)] || 0;
         
         setVideoData(null);
         setTimeout(() => {
@@ -138,7 +139,6 @@ export default function App() {
     }
   };
 
-  // 🔥 التحديث الفوري عند إغلاق الفيديو باستخدام Bridge المباشر للويب!
   const handleClosePlayer = async () => {
     const currentPosSec = Math.floor(progress / 1000);
     const durationSec = Math.floor(duration / 1000);
