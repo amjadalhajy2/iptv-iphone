@@ -51,20 +51,22 @@
         .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 3vw; overflow: hidden; background: #1a1a1a; }
         .card-front img { width: 100%; height: 100%; object-fit: cover; }
         
-        /* 🔥 تصميم الصورة المنقلبة والمساحة المخصصة للأزرار بالأسفل */
-        .card-back { transform: rotateY(180deg); background: rgba(20,20,20,0.95); display: flex; flex-direction: column; align-items: center; padding: 2vw; padding-bottom: 12vh; justify-content: center; text-align: center; border: 1px solid var(--primary); }
-        .card-back-text { color: white; font-size: 3vw; line-height: 1.8; font-weight: bold; }
-        .flip-actions-container { position: absolute; bottom: 2vh; display: flex; gap: 4vw; z-index: 5; justify-content: center; width: 100%; left: 0; }
-        .flip-circle-btn { background: white; color: black; width: 9vw; height: 9vw; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 6vw; font-weight: bold; font-family: 'Arial', sans-serif; box-shadow: 0 0.5vh 1.5vh rgba(0,0,0,0.8); }
-        .flip-circle-btn svg { width: 5vw; height: 5vw; transition: color 0.3s; }
+        /* 🔥 تصميم الصورة المنقلبة والمساحة المخصصة للأزرار الدائرية بالأسفل */
+        .card-back { transform: rotateY(180deg); background: rgba(20,20,20,0.95); display: flex; flex-direction: column; align-items: center; padding: 2vw; padding-bottom: 14vh; justify-content: center; text-align: center; border: 1px solid var(--primary); }
+        .card-back-text { color: white; font-size: 3.5vw; line-height: 1.8; font-weight: bold; }
+        .flip-actions-container { position: absolute; bottom: 2.5vh; display: flex; gap: 5vw; z-index: 5; justify-content: center; width: 100%; left: 0; }
+        .flip-circle-btn { background: white; color: black; width: 10vw; height: 10vw; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 6.5vw; font-weight: bold; font-family: 'Arial', sans-serif; box-shadow: 0 0.5vh 1.5vh rgba(0,0,0,0.8); }
+        .flip-circle-btn svg { width: 5.5vw; height: 5.5vw; transition: all 0.3s; }
+        .flip-fav-btn.active svg { color: #e50914; fill: #e50914; }
 
+        /* تصميم متابعة المشاهدة (Resume Cards) */
         .resume-card-layout { display: flex; flex-direction: column; height: 100%; width: 100%; background: #111; border-radius: 3vw; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.6); }
         .resume-img-area { position: relative; flex: 1; width: 100%; background: #000; overflow: hidden; }
         .resume-img-area img { width: 100%; height: 100%; object-fit: cover; position: absolute; top:0; left:0; } 
         .resume-play-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.5); width: 14vw; height: 14vw; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 0.5vw solid white; z-index: 10; box-shadow: 0 0 15px rgba(0,0,0,0.8); }
         .resume-play-center svg { width: 8vw; height: 8vw; margin-left: 1vw; color: white; }
         .resume-progress-bar { width: 100%; height: 1.2vh; background: rgba(255,255,255,0.2); }
-        .resume-progress-fill { height: 100%; background: var(--primary); }
+        .resume-progress-fill { height: 100%; background: var(--primary); transition: width 0.3s ease; }
         .resume-bottom-area { height: 7vh; background: #1a1a1a; display: flex; justify-content: center; align-items: center; width: 100%; cursor: pointer;}
         .resume-info-icon { font-size: 5.5vw; font-weight: bold; font-family: 'Arial', sans-serif; color: #fff; border: 0.4vw solid #fff; width: 7vw; height: 7vw; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
 
@@ -100,6 +102,7 @@
         
         .profiles-header { font-size: 7vw; font-weight: bold; color: white; text-align: center; margin-top: calc(env(safe-area-inset-top) + 10vh); margin-bottom: 5vh; }
         .profiles-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 6vw; padding: 0 5vw; }
+        
         .profile-card { position: relative; width: 35vw; aspect-ratio: 1; background: linear-gradient(145deg, #1f1f1f, #121212); border-radius: 4vw; color: white; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; }
         .profile-options-btn { position: absolute; top: 1.5vh; left: 2vw; font-size: 5vw; color: white; width: 7vw; height: 7vw; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.6); border-radius: 50%; z-index: 10; font-weight: bold; }
         .profile-menu { position: absolute; top: 8vh; left: 2vw; background: #222; border-radius: 2vw; overflow: hidden; z-index: 20; box-shadow: 0 1vh 2vh rgba(0,0,0,0.8); min-width: 25vw; border: 1px solid #444; }
@@ -201,7 +204,7 @@
                 </div>
             </div>
         </div>
-    </div> <!-- نهاية app-body -->
+    </div> 
 
 <script>
     const supabaseUrl = 'https://kpfymvtyqbyjmlqfgujo.supabase.co';
@@ -432,7 +435,7 @@
             const { data } = await supabaseClient.from('favorites').select('*').eq('username', iptv.user).eq('profile_name', currentProfile);
             const items = data.map(r => {
                 let obj = typeof r.item_data === 'string' ? JSON.parse(r.item_data) : r.item_data;
-                obj.item_type = r.item_type; // ضمان وجود النوع للمفضلات المختلطة
+                obj.item_type = r.item_type; 
                 return obj;
             });
             if(returnRaw) return items;
@@ -535,7 +538,7 @@
         }
     }
 
-    // زر المفضلة الدائري في القوائم الخارجية
+    // زر المفضلة من القوائم
     window.toggleFavFromGrid = async (btnEl, id, type) => {
         let item = window.allLoadedItems[id];
         if (!item) return;
@@ -544,10 +547,10 @@
             const icon = btnEl.querySelector('svg');
             if (data && data.length > 0) { 
                 await supabaseClient.from('favorites').delete().eq('id', data[0].id); 
-                icon.style.color = 'black'; showToast('تمت الإزالة من المفضلة');
+                icon.style.color = 'black'; icon.style.fill = 'currentColor'; showToast('تمت الإزالة من المفضلة');
             } else { 
                 await supabaseClient.from('favorites').insert([{ username: iptv.user, profile_name: currentProfile, item_id: String(id), item_type: type, item_data: item }]); 
-                icon.style.color = 'var(--primary)'; showToast('تم الإضافة إلى المفضلة');
+                icon.style.color = '#e50914'; icon.style.fill = '#e50914'; showToast('تم الإضافة إلى المفضلة');
             }
         } catch(e) { showToast('خطأ في المفضلات'); }
     };
@@ -559,13 +562,13 @@
             const metaDiv = el.querySelector('.dynamic-meta');
             metaDiv.innerHTML = "جاري التحميل...";
             
-            // جلب المفضلة وتلوين القلب
+            // تحقق من لون القلب فور قلب البطاقة
             const { data: favData } = await supabaseClient.from('favorites').select('id').eq('username', iptv.user).eq('profile_name', currentProfile).eq('item_id', String(id));
             const favIcon = el.querySelector('.flip-fav-btn svg');
-            if (favData && favData.length > 0 && favIcon) favIcon.style.color = 'var(--primary)';
-            else if (favIcon) favIcon.style.color = 'black';
+            if (favData && favData.length > 0 && favIcon) { favIcon.style.color = '#e50914'; favIcon.style.fill = '#e50914'; }
+            else if (favIcon) { favIcon.style.color = 'black'; favIcon.style.fill = 'currentColor'; }
 
-            // جلب وعرض البيانات بذكاء
+            // جلب بيانات الحلقات أو المدة
             let action = type === 'movie' ? `get_vod_info&vod_id=${id}` : `get_series_info&series_id=${id}`;
             apiFetch(action).then(data => {
                 const info = data.info || {};
@@ -643,7 +646,6 @@
         nextBatch.forEach(item => {
             const wrapper = document.createElement('div');
             wrapper.className = type === 'live' ? 'live-card' : 'card-container';
-            // في قسم المفضلات قد يكون النوع مختلطاً
             let actualType = type === 'mixed' ? (item.item_type || item.type || 'movie') : type;
             wrapper.innerHTML = createCardHtml(item, actualType);
             if(actualType === 'live') wrapper.onclick = () => playStream(item.stream_id || item.id, 'live', '');
@@ -845,7 +847,7 @@
         }));
     }
 
-    // 🔥 التحديث الفوري المباشر عند استلام إغلاق الفيديو من التطبيق الأم
+    // 🔥 الاتصال الحي بين الفيديو والتطبيق لتحديث أشرطة التقدم فوراً عند الإغلاق
     window.onVideoClosed = (progressSec, durationSec) => {
         if (activeStreamData) {
             if (activeStreamData.type === 'series' && activeStreamData.current_episode_id) {
