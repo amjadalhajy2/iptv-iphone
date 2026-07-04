@@ -51,15 +51,18 @@
         .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 3vw; overflow: hidden; background: #1a1a1a; }
         .card-front img { width: 100%; height: 100%; object-fit: cover; }
         
-        /* 🔥 تصميم الصورة المنقلبة والمساحة المخصصة للأزرار الدائرية بالأسفل */
-        .card-back { transform: rotateY(180deg); background: rgba(20,20,20,0.95); display: flex; flex-direction: column; align-items: center; padding: 2vw; padding-bottom: 14vh; justify-content: center; text-align: center; border: 1px solid var(--primary); }
-        .card-back-text { color: white; font-size: 3.5vw; line-height: 1.8; font-weight: bold; }
-        .flip-actions-container { position: absolute; bottom: 2.5vh; display: flex; gap: 5vw; z-index: 5; justify-content: center; width: 100%; left: 0; }
-        .flip-circle-btn { background: white; color: black; width: 10vw; height: 10vw; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 6.5vw; font-weight: bold; font-family: 'Arial', sans-serif; box-shadow: 0 0.5vh 1.5vh rgba(0,0,0,0.8); }
-        .flip-circle-btn svg { width: 5.5vw; height: 5.5vw; transition: all 0.3s; }
+        /* 🔥 تصميم الصورة المنقلبة والشريط السفلي الجديد (Split Bar) */
+        .card-back { transform: rotateY(180deg); background: rgba(20,20,20,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; border: 1px solid var(--primary); }
+        .card-back-content { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding-bottom: 6.5vh; padding-top: 2vh; }
+        .card-back-text { color: white; font-size: 3vw; line-height: 1.8; font-weight: bold; }
+        
+        .flip-footer-bar { position: absolute; bottom: 0; left: 0; width: 100%; height: 6.5vh; display: flex; background: rgba(0,0,0,0.8); border-top: 1px solid rgba(255,255,255,0.2); }
+        .flip-footer-btn { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 5vw; font-weight: bold; color: white; cursor: pointer; transition: background 0.3s; }
+        .flip-footer-btn:active { background: rgba(255,255,255,0.1); }
+        .flip-footer-right { border-left: 1px solid rgba(255,255,255,0.2); font-family: 'Arial', sans-serif; font-size: 6vw; }
+        .flip-footer-left svg { width: 4.5vw; height: 4.5vw; transition: all 0.3s; }
         .flip-fav-btn.active svg { color: #e50914; fill: #e50914; }
 
-        /* تصميم متابعة المشاهدة (Resume Cards) */
         .resume-card-layout { display: flex; flex-direction: column; height: 100%; width: 100%; background: #111; border-radius: 3vw; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.6); }
         .resume-img-area { position: relative; flex: 1; width: 100%; background: #000; overflow: hidden; }
         .resume-img-area img { width: 100%; height: 100%; object-fit: cover; position: absolute; top:0; left:0; } 
@@ -219,6 +222,9 @@
     window.allLoadedItems = {};
     window.pendingFetches = {};
     let editingProfileName = null;
+    
+    // 🔥 الذاكرة الشاملة لتحديث أشرطة التقدم في كل مكان بالتطبيق
+    window.userActivityMap = {};
 
     function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 4000); }
 
@@ -339,22 +345,38 @@
         document.getElementById(`menu-${name}`).classList.toggle('hidden');
     };
 
-    function selectProfile(name) {
-        currentProfile = name; document.getElementById('current-profile-name').innerText = name; document.getElementById('profiles-screen').classList.add('hidden'); document.getElementById('main-screen').classList.remove('hidden'); loadPage('movies');
+    // 🔥 تحميل ذاكرة المشاهدات الشاملة عند الدخول
+    async function fetchAllUserActivity() {
+        try {
+            const { data } = await supabaseClient.from('user_activity').select('movie_id, resume_time, item_type, item_data').eq('username', iptv.user).eq('profile_name', currentProfile);
+            window.userActivityMap = {};
+            if(data) {
+                data.forEach(r => { 
+                    window.userActivityMap[String(r.movie_id)] = { 
+                        resume_time: r.resume_time, 
+                        type: r.item_type,
+                        episodes_progress: r.item_data?.episodes_progress || {}
+                    }; 
+                });
+            }
+        } catch(e){}
+    }
+
+    async function selectProfile(name) {
+        currentProfile = name; document.getElementById('current-profile-name').innerText = name; 
+        document.getElementById('profiles-screen').classList.add('hidden'); document.getElementById('main-screen').classList.remove('hidden'); 
+        await fetchAllUserActivity();
+        loadPage('movies');
     }
 
     function openAddProfileModal() { 
-        editingProfileName = null;
-        document.getElementById('modal-title').innerText = 'اسم المستخدم الجديد';
-        document.getElementById('new-profile-input').value = ''; 
-        document.getElementById('add-modal').classList.remove('hidden'); 
+        editingProfileName = null; document.getElementById('modal-title').innerText = 'اسم المستخدم الجديد';
+        document.getElementById('new-profile-input').value = ''; document.getElementById('add-modal').classList.remove('hidden'); 
     }
 
     window.openEditProfileModal = (oldName) => {
-        editingProfileName = oldName;
-        document.getElementById('menu-' + oldName).classList.add('hidden');
-        document.getElementById('modal-title').innerText = 'تعديل اسم المستخدم';
-        document.getElementById('new-profile-input').value = oldName;
+        editingProfileName = oldName; document.getElementById('menu-' + oldName).classList.add('hidden');
+        document.getElementById('modal-title').innerText = 'تعديل اسم المستخدم'; document.getElementById('new-profile-input').value = oldName;
         document.getElementById('add-modal').classList.remove('hidden');
     };
 
@@ -410,8 +432,7 @@
 
     async function loadPage(type) {
         if(currentTab === type && document.getElementById('main-screen').scrollTop > 0) {
-            document.getElementById('main-screen').scrollTo({top: 0, behavior: 'smooth'});
-            return;
+            document.getElementById('main-screen').scrollTo({top: 0, behavior: 'smooth'}); return;
         }
 
         currentTab = type; updateSearchPlaceholder(type);
@@ -438,8 +459,7 @@
                 obj.item_type = r.item_type; 
                 return obj;
             });
-            if(returnRaw) return items;
-            return items;
+            if(returnRaw) return items; return items;
         } catch(e) { return []; }
     }
 
@@ -475,7 +495,7 @@
     }
 
     function createCardHtml(item, type, resumeTime = 0, isResumeRow = false) {
-        const itemId = item.stream_id || item.series_id || item.id;
+        const itemId = String(item.stream_id || item.series_id || item.id);
         window.allLoadedItems[itemId] = item;
         
         const title = item.name || item.title || 'بدون اسم';
@@ -491,10 +511,10 @@
                 <div class="live-title">${title}</div>
             `;
         } else {
-            let progPercent = resumeTime > 0 ? Math.min((resumeTime / 7200) * 100, 100) : 0;
-            if(type === 'series' && item.current_episode_id && item.episodes_progress && item.episodes_progress[item.current_episode_id]) {
-                progPercent = Math.min((item.episodes_progress[item.current_episode_id] / 3000) * 100, 100);
-            }
+            // 🔥 مزامنة التقدم من الذاكرة الشاملة لجميع القوائم
+            let actualResumeTime = resumeTime > 0 ? resumeTime : (window.userActivityMap[itemId] ? window.userActivityMap[itemId].resume_time : 0);
+            let assumedDuration = type === 'series' ? 3000 : 7200;
+            let progPercent = actualResumeTime > 0 ? Math.min((actualResumeTime / assumedDuration) * 100, 100) : 0;
 
             if (isResumeRow) {
                 return `
@@ -515,6 +535,7 @@
                 `;
             }
 
+            // 🔥 تصميم الفليب كارد مع الشريط السفلي المقسم
             return `
                 <div class="card" onclick="window.flipCard(this, '${itemId}', '${type}')">
                     <div class="card-front">
@@ -522,15 +543,16 @@
                         ${progPercent > 0 ? `<div class="progress-bar"><div class="progress-fill" style="width: ${progPercent}%"></div></div>` : ''}
                     </div>
                     <div class="card-back">
-                        <div class="card-back-text">${title}</div>
-                        <div class="card-back-text" style="margin-top:1vh;">${rating}</div>
-                        <div class="card-back-text dynamic-meta" style="margin-top:1vh;"><span style="font-size:2.5vw; opacity:0.5;">اضغط للتحميل</span></div>
-                        
-                        <div class="flip-actions-container">
-                            <div class="flip-circle-btn flip-fav-btn" onclick="event.stopPropagation(); window.toggleFavFromGrid(this, '${itemId}', '${type}')">
+                        <div class="card-back-content">
+                            <div class="card-back-text">${title}</div>
+                            <div class="card-back-text" style="margin-top:1vh;">${rating}</div>
+                            <div class="card-back-text dynamic-meta" style="margin-top:1vh;"><span style="font-size:2.5vw; opacity:0.5;">اضغط للتحميل</span></div>
+                        </div>
+                        <div class="flip-footer-bar">
+                            <div class="flip-footer-btn flip-footer-right" onclick="event.stopPropagation(); window.openItemDetails('${itemId}', '${type}')">!</div>
+                            <div class="flip-footer-btn flip-footer-left flip-fav-btn" onclick="event.stopPropagation(); window.toggleFavFromGrid(this, '${itemId}', '${type}')">
                                 <svg class="svg-icon"><use href="#icon-heart"></use></svg>
                             </div>
-                            <div class="flip-circle-btn" onclick="event.stopPropagation(); window.openItemDetails('${itemId}', '${type}')">!</div>
                         </div>
                     </div>
                 </div>
@@ -538,7 +560,6 @@
         }
     }
 
-    // زر المفضلة من القوائم
     window.toggleFavFromGrid = async (btnEl, id, type) => {
         let item = window.allLoadedItems[id];
         if (!item) return;
@@ -547,12 +568,12 @@
             const icon = btnEl.querySelector('svg');
             if (data && data.length > 0) { 
                 await supabaseClient.from('favorites').delete().eq('id', data[0].id); 
-                icon.style.color = 'black'; icon.style.fill = 'currentColor'; showToast('تمت الإزالة من المفضلة');
+                icon.style.color = 'white'; icon.style.fill = 'currentColor'; showToast('تمت الإزالة من المفضلة');
             } else { 
                 await supabaseClient.from('favorites').insert([{ username: iptv.user, profile_name: currentProfile, item_id: String(id), item_type: type, item_data: item }]); 
                 icon.style.color = '#e50914'; icon.style.fill = '#e50914'; showToast('تم الإضافة إلى المفضلة');
             }
-        } catch(e) { showToast('خطأ في المفضلات'); }
+        } catch(e) {}
     };
 
     window.flipCard = async (el, id, type) => {
@@ -562,13 +583,11 @@
             const metaDiv = el.querySelector('.dynamic-meta');
             metaDiv.innerHTML = "جاري التحميل...";
             
-            // تحقق من لون القلب فور قلب البطاقة
             const { data: favData } = await supabaseClient.from('favorites').select('id').eq('username', iptv.user).eq('profile_name', currentProfile).eq('item_id', String(id));
             const favIcon = el.querySelector('.flip-fav-btn svg');
             if (favData && favData.length > 0 && favIcon) { favIcon.style.color = '#e50914'; favIcon.style.fill = '#e50914'; }
-            else if (favIcon) { favIcon.style.color = 'black'; favIcon.style.fill = 'currentColor'; }
+            else if (favIcon) { favIcon.style.color = 'white'; favIcon.style.fill = 'currentColor'; }
 
-            // جلب بيانات الحلقات أو المدة
             let action = type === 'movie' ? `get_vod_info&vod_id=${id}` : `get_series_info&series_id=${id}`;
             apiFetch(action).then(data => {
                 const info = data.info || {};
@@ -708,11 +727,11 @@
         
         document.getElementById('main-screen').classList.add('hidden'); document.getElementById('details-screen').classList.remove('hidden');
         
-        const id = item.stream_id || item.series_id || item.id;
+        const id = String(item.stream_id || item.series_id || item.id);
         activeStreamData = { ...item, type, id, resume_time: 0, episodes_progress: {} };
 
         try {
-            const { data } = await supabaseClient.from('user_activity').select('*').eq('username', iptv.user).eq('profile_name', currentProfile).eq('movie_id', String(id)).maybeSingle();
+            const { data } = await supabaseClient.from('user_activity').select('*').eq('username', iptv.user).eq('profile_name', currentProfile).eq('movie_id', id).maybeSingle();
             if (data) {
                 activeStreamData.resume_time = data.resume_time || 0;
                 activeStreamData.episodes_progress = data.item_data.episodes_progress || {};
@@ -788,7 +807,7 @@
                 favBtn.innerHTML = '<svg class="svg-icon"><use href="#icon-close"></use></svg> إزالة من المفضلة'; favBtn.style.background = 'var(--primary)'; favBtn.style.border = 'none'; 
                 showToast('تم الإضافة إلى المفضلة');
             }
-        } catch(e) { showToast('خطأ في المفضلات'); }
+        } catch(e) {}
     }
 
     function renderSeasons(episodesObj) {
@@ -815,9 +834,13 @@
             const div = document.createElement('button'); div.className = 'ep-card';
             div.dataset.id = ep.id;
             
-            let epResumeTime = (activeStreamData.episodes_progress && activeStreamData.episodes_progress[ep.id]) 
-                               ? activeStreamData.episodes_progress[ep.id] 
-                               : ((activeStreamData.current_episode_id == ep.id) ? activeStreamData.resume_time : 0);
+            let epIdStr = String(ep.id);
+            let epResumeTime = 0;
+            if (activeStreamData.episodes_progress && activeStreamData.episodes_progress[epIdStr]) {
+                epResumeTime = activeStreamData.episodes_progress[epIdStr];
+            } else if (String(activeStreamData.current_episode_id) === epIdStr) {
+                epResumeTime = activeStreamData.resume_time;
+            }
             
             let progPercent = epResumeTime > 0 ? Math.min((epResumeTime / 3000) * 100, 100) : 0;
             let pBar = progPercent > 0 ? `<div class="ep-progress"><div class="ep-progress-fill" style="width: ${progPercent}%"></div></div>` : '';
@@ -825,7 +848,7 @@
             div.innerHTML = `<span>الحلقة ${ep.episode_num || '-'}</span> <svg class="svg-icon"><use href="#icon-play"></use></svg> ${pBar}`;
             
             div.onclick = () => { 
-                activeStreamData.current_episode_id = String(ep.id); activeStreamData.current_episode_num = ep.episode_num; activeStreamData.current_episode_ext = ep.container_extension || 'mkv'; 
+                activeStreamData.current_episode_id = epIdStr; activeStreamData.current_episode_num = ep.episode_num; activeStreamData.current_episode_ext = ep.container_extension || 'mkv'; 
                 activeStreamData.season_num = currentSeason;
                 playStream(ep.id, 'series', ep.container_extension || 'mkv', epResumeTime, window.masterEpsList); 
             }; 
@@ -847,15 +870,23 @@
         }));
     }
 
-    // 🔥 الاتصال الحي بين الفيديو والتطبيق لتحديث أشرطة التقدم فوراً عند الإغلاق
+    // 🔥 التحديث الحي للمزامنة الشاملة عند الرجوع
     window.onVideoClosed = (progressSec, durationSec) => {
         if (activeStreamData) {
+            let itemIdStr = String(activeStreamData.id);
+            if (!window.userActivityMap[itemIdStr]) window.userActivityMap[itemIdStr] = { type: activeStreamData.type, episodes_progress: {} };
+
             if (activeStreamData.type === 'series' && activeStreamData.current_episode_id) {
+                let epIdStr = String(activeStreamData.current_episode_id);
                 if (!activeStreamData.episodes_progress) activeStreamData.episodes_progress = {};
-                activeStreamData.episodes_progress[activeStreamData.current_episode_id] = progressSec;
+                activeStreamData.episodes_progress[epIdStr] = progressSec;
                 activeStreamData.resume_time = progressSec; 
+                
+                window.userActivityMap[itemIdStr].episodes_progress[epIdStr] = progressSec;
+                window.userActivityMap[itemIdStr].resume_time = progressSec;
             } else {
                 activeStreamData.resume_time = progressSec;
+                window.userActivityMap[itemIdStr].resume_time = progressSec;
             }
             
             silentRefreshContinueWatching();
