@@ -11,7 +11,7 @@ import Slider from '@react-native-community/slider';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
 const SUPABASE_URL = 'https://kpfymvtyqbyjmlqfgujo.supabase.co'; 
-    const SUPABASE_ANON_KEY = 'sb_publishable_g7dHfpmPHcQwAWsO9FFuGw_4lG8fyLc';
+const SUPABASE_ANON_KEY = 'sb_publishable_g7dHfpmPHcQwAWsO9FFuGw_4lG8fyLc';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -119,7 +119,6 @@ export default function App() {
     }
   };
 
-  // 🔥 التنقل السلس بين الحلقات والمواسم
   const playEpisodeById = (direction) => {
     if(!videoData.allEpisodes || videoData.allEpisodes.length === 0) return;
     const idx = videoData.allEpisodes.findIndex(e => String(e.id) === String(videoData.itemData.current_episode_id));
@@ -139,8 +138,16 @@ export default function App() {
     }
   };
 
+  // 🔥 التحديث الفوري عند إغلاق الفيديو باستخدام Bridge المباشر للويب!
   const handleClosePlayer = async () => {
-    forceSyncNow(Math.floor(progress / 1000), Math.floor(duration / 1000));
+    const currentPosSec = Math.floor(progress / 1000);
+    const durationSec = Math.floor(duration / 1000);
+    forceSyncNow(currentPosSec, durationSec);
+    
+    if (webViewRef.current) {
+      webViewRef.current.injectJavaScript(`if(window.onVideoClosed) { window.onVideoClosed(${currentPosSec}, ${durationSec}); } true;`);
+    }
+
     setVideoData(null);
     await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
   };
@@ -185,7 +192,7 @@ export default function App() {
       onPanResponderMove: async (evt, gestureState) => {
         const { dy, x0 } = gestureState;
         const isLeftSide = x0 < screenHeight / 2; 
-        if (isLeftSide) { // تم حصر الإيماءة في اليسار فقط للتحكم بالإضاءة وتجاهل اليمين
+        if (isLeftSide) { 
           let newBrightness = Math.max(0, Math.min(1, brightness - (dy / 250)));
           setBrightness(newBrightness); await Brightness.setBrightnessAsync(newBrightness);
           activateBrightnessBar();
@@ -202,7 +209,6 @@ export default function App() {
     lastTap.current = now;
   };
 
-  // إعدادات المسلسلات
   let displayTitle = videoData?.itemData?.name || videoData?.itemData?.title || 'جاري التشغيل';
   if (videoData?.itemType === 'series' && videoData?.itemData?.season_num && videoData?.itemData?.current_episode_num) {
     displayTitle += ` (S${videoData.itemData.season_num}:E${videoData.itemData.current_episode_num})`;
@@ -236,7 +242,6 @@ export default function App() {
             </View>
           )}
 
-          {/* شريط الإضاءة المتبقي فقط */}
           {showSideBar && (
             <View style={styles.sideBarWrapper}>
               <View style={styles.sideBarBg}>
@@ -257,7 +262,6 @@ export default function App() {
                 
                 <View style={{flex: 1}} />
                 
-                {/* 🔥 أزرار التخطي الجديدة بالأعلى */}
                 {videoData.itemType === 'series' && (
                   <View style={{flexDirection: 'row', alignItems: 'center', gap: 15, marginRight: 20}}>
                     <TouchableOpacity style={[styles.topRightBtn, {opacity: hasPrevEp ? 1 : 0.3}]} onPress={() => playEpisodeById(-1)} disabled={!hasPrevEp}>
