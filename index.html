@@ -46,28 +46,29 @@
         
         .card-container { perspective: 1000px; border-radius: 3vw; position: relative; width: 100%; aspect-ratio: 2 / 3; background: transparent; }
         .row-inner .card-container { width: 35vw; flex: 0 0 auto; }
-        .card { width: 100%; height: 100%; position: relative; transition: transform 0.6s; transform-style: preserve-3d; border-radius: 3vw; box-shadow: 0 4px 8px rgba(0,0,0,0.5); border: none; }
+        .card { width: 100%; height: 100%; position: relative; transition: transform 0.6s; transform-style: preserve-3d; border-radius: 3vw; box-shadow: 0 4px 8px rgba(0,0,0,0.5); border: none; cursor: pointer; }
         .card.flipped { transform: rotateY(180deg); }
         .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 3vw; overflow: hidden; background: #1a1a1a; }
         .card-front img { width: 100%; height: 100%; object-fit: cover; }
         .card-back { transform: rotateY(180deg); background: rgba(20,20,20,0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2vw; text-align: center; border: 1px solid var(--primary); }
         .card-back-text { color: white; font-size: 3vw; line-height: 1.8; font-weight: bold; }
         
-        /* 🔥 تصميم متابعة المشاهدة الجديد (الصورة واضحة، بدون تظليل، زر التشغيل شفاف ونقي، التعجب بالأسفل) */
-        .resume-card-layout { display: flex; flex-direction: column; height: 100%; position: relative; background: #111; border-radius: 3vw; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.5); }
-        .resume-img-area { position: relative; flex: 1; width: 100%; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        /* 🔥 التصميم الجديد كلياً لبطاقة "متابعة المشاهدة" */
+        .resume-card-layout { display: flex; flex-direction: column; height: 100%; width: 100%; background: #111; border-radius: 3vw; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.6); }
+        .resume-img-area { position: relative; flex: 1; width: 100%; background: #000; overflow: hidden; }
         .resume-img-area img { width: 100%; height: 100%; object-fit: cover; position: absolute; top:0; left:0; } 
-        .resume-play-center { position: relative; background: rgba(0,0,0,0.4); width: 14vw; height: 14vw; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 0.5vw solid white; z-index: 10; box-shadow: 0 0 15px rgba(0,0,0,0.8); }
+        .resume-play-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.5); width: 14vw; height: 14vw; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 0.5vw solid white; z-index: 10; box-shadow: 0 0 15px rgba(0,0,0,0.8); }
         .resume-play-center svg { width: 8vw; height: 8vw; margin-left: 1vw; color: white; }
-        .resume-progress-bar { width: 100%; height: 1.5vh; background: rgba(255,255,255,0.2); }
+        .resume-progress-bar { width: 100%; height: 1.2vh; background: rgba(255,255,255,0.2); }
         .resume-progress-fill { height: 100%; background: var(--primary); }
-        .resume-bottom-area { height: 6vh; background: #1a1a1a; display: flex; justify-content: center; align-items: center; }
-        .resume-info-icon { font-size: 4vw; font-weight: bold; font-family: sans-serif; color: #ccc; border: 0.3vw solid #ccc; width: 6vw; height: 6vw; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
+        .resume-bottom-area { height: 7vh; background: #1a1a1a; display: flex; justify-content: center; align-items: center; width: 100%; }
+        .resume-info-icon { font-size: 5.5vw; font-weight: bold; font-family: 'Arial', sans-serif; color: #fff; border: 0.4vw solid #fff; width: 7vw; height: 7vw; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
 
         .live-card { width: 100%; text-align: center; background: none; border: none; }
         .row-inner .live-card { width: 42vw; flex: 0 0 auto; } 
         .live-img-wrapper { width: 100%; aspect-ratio: 16 / 9; background: #111; border-radius: 3vw; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid #333; position: relative; }
         .live-img-wrapper img { width: 80%; height: 80%; object-fit: contain; }
+        .live-fallback-text { position: absolute; color: white; font-size: 4vw; font-weight: bold; text-align: center; width: 90%; word-wrap: break-word; }
         .live-title { font-size: 3.5vw; margin-top: 1vh; font-weight: bold; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         .progress-bar { position: absolute; bottom: 0; left:0; width: 100%; height: 1.5vh; background: rgba(0,0,0,0.8); z-index: 20; }
@@ -85,9 +86,9 @@
         .action-btn { display: flex; justify-content: center; align-items: center; gap: 2vw; background: white; color: black; border: none; padding: 2vh; font-size: 4.5vw; font-weight: bold; border-radius: 2vw; width: 100%; text-align: center; margin-bottom: 1vh;}
         .action-btn.outline { background: transparent; color: white; border: 1px solid white; }
         
-        /* 🔥 تصميم أزرار الحلقات لتملأ الشاشة مع شريط التقدم بأسفلها */
+        /* 🔥 تصميم أزرار الحلقات بعرض الشاشة مع شريط التقدم */
         .episodes-list { width: 100%; display: flex; flex-direction: column; gap: 2vh; padding-bottom: 5vh; }
-        .ep-card { width: 100%; background: rgba(35,35,35,0.85); padding: 2.5vh 4vw; border-radius: 2vw; display: flex; justify-content: space-between; align-items: center; color: white; font-size: 4.5vw; font-weight: bold; border:none; position: relative; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        .ep-card { width: 100%; background: rgba(35,35,35,0.85); padding: 3vh 4vw; border-radius: 2vw; display: flex; justify-content: space-between; align-items: center; color: white; font-size: 4.5vw; font-weight: bold; border:none; position: relative; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
         .ep-progress { position: absolute; bottom: 0; left: 0; width: 100%; height: 1vh; background: rgba(0,0,0,0.4); }
         .ep-progress-fill { height: 100%; background: var(--primary); }
 
@@ -179,7 +180,7 @@
     <div id="details-screen" class="scrollable-screen hidden">
         <div class="details-layout">
             <img id="detail-poster" class="details-poster" src="">
-            <h1 id="detail-title" class="details-title"></h1>
+            <h1 id="detail-title" class="details-title">جاري التحميل...</h1>
             
             <div class="details-meta-box" id="detail-meta"></div>
             <div style="width: 100%;" id="detail-actions"></div>
@@ -208,7 +209,7 @@
 
     function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 4000); }
 
-    // 🔥 الكاش السريع جداً 
+    // 🔥 الكاش السريع جداً باستخدام IndexedDB / Cache API
     async function apiFetch(action, extraParams = '', forceRefresh = false) {
         let domain = iptv.domain || document.getElementById('iptv-domain').value.trim();
         let user = iptv.user || document.getElementById('iptv-user').value.trim();
@@ -227,6 +228,7 @@
                 if (cachedRes) {
                     const cachedTime = cachedRes.headers.get('x-cache-time');
                     const isInfoRequest = action === 'get_vod_info' || action === 'get_series_info';
+                    // تفاصيل الفيلم تحفظ للأبد، والقوائم تحفظ 24 ساعة (86400000 مللي ثانية)
                     if (isInfoRequest || (cachedTime && (Date.now() - parseInt(cachedTime) < 86400000))) { 
                         return await cachedRes.json();
                     }
@@ -285,7 +287,7 @@
     }
 
     function logout() { 
-        if(confirm('هل أنت متأكد من تسجيل الخروج؟')) {
+        if(confirm('هل أنت متأكد من تسجيل الخروج من حسابك؟')) {
             localStorage.clear(); location.reload(); 
         }
     }
@@ -339,6 +341,7 @@
     }
 
     async function loadPage(type) {
+        // 🔥 الانتقال السلس لأعلى الصفحة عند النقر على نفس القسم
         if(currentTab === type && document.getElementById('main-screen').scrollTop > 0) {
             document.getElementById('main-screen').scrollTo({top: 0, behavior: 'smooth'});
             return;
@@ -423,17 +426,18 @@
             }
 
             if (isResumeRow) {
+                // 🔥 تصميم متابعة المشاهدة الجديد كلياً والواضح
                 return `
-                    <div class="card-container" style="pointer-events: none;">
+                    <div class="card-container" style="pointer-events: auto;" onclick="window.resumeItem('${itemId}', '${type}')">
                         <div class="resume-card-layout">
-                            <div class="resume-img-area" style="pointer-events: auto;" onclick="window.resumeItem('${itemId}', '${type}');">
+                            <div class="resume-img-area">
                                 <img src="${imgUrl}" onerror="this.style.display='none';">
                                 <div class="resume-play-center">
                                     <svg class="svg-icon"><use href="#icon-play"></use></svg>
                                 </div>
                             </div>
-                            <div class="resume-progress-bar"><div class="resume-progress-fill" style="width: ${progPercent}%"></div></div>
-                            <div class="resume-bottom-area" style="pointer-events: auto;" onclick="window.openItemDetails('${itemId}', '${type}');">
+                            ${progPercent > 0 ? `<div class="resume-progress-bar"><div class="resume-progress-fill" style="width: ${progPercent}%"></div></div>` : ''}
+                            <div class="resume-bottom-area" onclick="event.stopPropagation(); window.openItemDetails('${itemId}', '${type}');">
                                 <div class="resume-info-icon">!</div>
                             </div>
                         </div>
@@ -451,8 +455,8 @@
                         <div class="card-back-text">${title}</div>
                         <div class="card-back-text">${rating}</div>
                         <div class="card-back-text dynamic-meta"><span style="font-size:2.5vw; opacity:0.5;">اضغط لعرض التفاصيل</span></div>
-                        <button class="action-btn" style="padding:1.5vh; font-size:3.5vw; margin-top:2vh;" onclick="event.stopPropagation(); window.openItemDetails('${itemId}', '${type}')">
-                            <div style="border: 0.3vw solid black; border-radius: 50%; width: 5vw; height: 5vw; display: flex; align-items: center; justify-content: center; font-weight: bold;">!</div>
+                        <button class="action-btn" style="padding:1.5vh; font-size:4.5vw; margin-top:2vh;" onclick="event.stopPropagation(); window.openItemDetails('${itemId}', '${type}')">
+                            <div style="border: 0.3vw solid black; border-radius: 50%; width: 5.5vw; height: 5.5vw; display: flex; align-items: center; justify-content: center; font-weight: bold;">!</div>
                         </button>
                     </div>
                 </div>
@@ -475,7 +479,7 @@
         }
     };
 
-    // 🔥 زر الاستكمال السحري (مباشرة للمشغل)
+    // 🔥 الاستكمال المباشر السحري (Direct Play) 
     window.resumeItem = async (id, type) => {
         let item = window.allLoadedItems[id] || activeStreamData;
         if(!item) return;
@@ -591,7 +595,7 @@
     async function openDetails(item, type, autoPlay = false) {
         history.pushState({view: 'details'}, 'Details', '#details');
         
-        // مسح الشبح للفيلم السابق
+        // 🔥 مسح (الشبح) فوراً
         document.getElementById('detail-title').innerText = 'جاري التحميل...';
         document.getElementById('detail-poster').src = '';
         document.getElementById('detail-meta').innerHTML = '';
@@ -642,7 +646,7 @@
                 if (activeStreamData.current_episode_id && activeStreamData.resume_time > 0) {
                     let sNum = activeStreamData.season_num || '?';
                     let eNum = activeStreamData.current_episode_num || '?';
-                    actionsHtml = `<button class="action-btn" onclick="playStream('${activeStreamData.current_episode_id}', 'series', '${activeStreamData.current_episode_ext}', ${activeStreamData.resume_time})"><svg class="svg-icon"><use href="#icon-play"></use></svg> متابعة المشاهدة S${sNum}:E${eNum}</button>` + actionsHtml;
+                    actionsHtml = `<button class="action-btn" onclick="playStream('${activeStreamData.current_episode_id}', 'series', '${activeStreamData.current_episode_ext}', ${activeStreamData.resume_time})"><svg class="svg-icon"><use href="#icon-play"></use></svg> متابعة مشاهدة S${sNum}:E${eNum}</button>` + actionsHtml;
                     if(autoPlay) playStream(activeStreamData.current_episode_id, 'series', activeStreamData.current_episode_ext, activeStreamData.resume_time);
                 }
                 document.getElementById('series-episodes-col').classList.remove('hidden'); 
@@ -661,7 +665,6 @@
         } catch(e) {}
     }
 
-    // 🔥 حل جذري لمشكلة المفضلات
     async function toggleFavorite() {
         try {
             const { data } = await supabaseClient.from('favorites').select('id').eq('username', iptv.user).eq('profile_name', currentProfile).eq('item_id', String(activeStreamData.id));
@@ -682,7 +685,6 @@
     function renderSeasons(episodesObj) {
         const select = document.getElementById('season-selector'); select.innerHTML = '';
         
-        // دمج كل الحلقات لتخطي المواسم
         window.masterEpsList = [];
         let domain = iptv.domain; if (!domain.startsWith('http')) domain = 'http://' + domain;
 
@@ -698,12 +700,12 @@
         if(Object.keys(episodesObj).length > 0) renderEpisodes(episodesObj[Object.keys(episodesObj)[0]], Object.keys(episodesObj)[0]);
     }
 
-    // 🔥 أشرطة تقدم الحلقات من مصفوفة episodes_progress 
     function renderEpisodes(epsList, currentSeason) {
         const container = document.getElementById('episodes-container'); container.innerHTML = '';
         epsList.forEach((ep) => {
             const div = document.createElement('button'); div.className = 'ep-card';
             
+            // 🔥 شريط تقدم لكل الحلقات
             let epResumeTime = (activeStreamData.episodes_progress && activeStreamData.episodes_progress[ep.id]) 
                                ? activeStreamData.episodes_progress[ep.id] 
                                : ((activeStreamData.current_episode_id == ep.id) ? activeStreamData.resume_time : 0);
@@ -716,7 +718,6 @@
             div.onclick = () => { 
                 activeStreamData.current_episode_id = String(ep.id); activeStreamData.current_episode_num = ep.episode_num; activeStreamData.current_episode_ext = ep.container_extension || 'mkv'; 
                 activeStreamData.season_num = currentSeason;
-                
                 playStream(ep.id, 'series', ep.container_extension || 'mkv', epResumeTime, window.masterEpsList); 
             }; 
             container.appendChild(div);
@@ -739,7 +740,7 @@
 
     window.addEventListener('popstate', () => { 
         document.getElementById('details-screen').classList.add('hidden'); 
-        // لا نضيف hidden للرئيسية لكي نعود إليها فوراً لو استكملنا من الكارت الخارجي
+        // تحديث صامت للمشاهدة لتجنب تحريك الشاشة
         silentRefreshContinueWatching();
     });
 </script>
