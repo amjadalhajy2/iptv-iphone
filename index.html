@@ -238,7 +238,24 @@
         document.querySelectorAll('.profile-menu').forEach(m => m.classList.add('hidden'));
     });
 
-    async function apiFetch(action, extraParams = '', forceRefresh = false) {
+    // 🔥 قوائم الأفلام/المسلسلات/القنوات تُعتبر صالحة لمدة يوم كامل - بعدها يتم تحديثها تلقائيًا بالخلفية عند أول فتح للتطبيق
+    const STALE_AFTER_MS = 24 * 60 * 60 * 1000; // 24 ساعة
+
+    function performNetworkFetch(url) {
+        return new Promise((resolve, reject) => {
+            if (window.ReactNativeWebView) {
+                const reqId = Math.random().toString(36).substring(7);
+                window.pendingFetches[reqId] = { resolve, reject };
+                setTimeout(() => { if (window.pendingFetches[reqId]) { window.pendingFetches[reqId].reject(new Error('Timeout')); delete window.pendingFetches[reqId]; }}, 25000);
+                window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'PROXY_FETCH', url: url, reqId: reqId }));
+            } else { fetch(url).then(r => r.json()).then(resolve).catch(reject); }
+        });
+    }
+
+    // 🔥 apiFetch الآن يدعم Stale-While-Revalidate:
+    // لو البيانات موجودة بالكاش (حتى لو قديمة) تُعرض فورًا للمستخدم بدون أي انتظار للسيرفر،
+    // وبنفس الوقت (لو كانت قديمة) يتم جلب نسخة جديدة بالخلفية وتمرر عبر onBackgroundUpdate لتحديث الواجهة بهدوء دون قطع تجربة المستخدم.
+    async function apiFetch(action, extraParams = '', forceRefresh = false, onBackgroundUpdate = null) {
         let domain = iptv.domain || document.getElementById('iptv-domain').value.trim();
         let user = iptv.user || document.getElementById('iptv-user').value.trim();
         let pass = iptv.pass || document.getElementById('iptv-pass').value.trim();
@@ -248,42 +265,38 @@
 
         const urlPath = `${action}_${extraParams}`;
         const cacheReq = new Request(`https://amjad.cache/${urlPath}`);
-        
-        if (!forceRefresh) {
-            try {
-                const cache = await caches.open('amjad-data');
-                const cachedRes = await cache.match(cacheReq);
-                if (cachedRes) {
-                    const cachedTime = cachedRes.headers.get('x-cache-time');
-                    const isInfoRequest = action === 'get_vod_info' || action === 'get_series_info';
-                    if (isInfoRequest || (cachedTime && (Date.now() - parseInt(cachedTime) < 86400000))) { 
-                        return await cachedRes.json();
-                    }
-                }
-            } catch(e) {}
-        }
+        const isInfoRequest = action === 'get_vod_info' || action === 'get_series_info';
 
         let url = `${domain}/player_api.php?username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`;
         if (action) url += `&action=${action}`;
         if (extraParams) url += extraParams;
 
-        return new Promise((resolve, reject) => {
-            if (window.ReactNativeWebView) {
-                const reqId = Math.random().toString(36).substring(7);
-                window.pendingFetches[reqId] = { 
-                    resolve: async (data) => {
-                        try {
-                            const cache = await caches.open('amjad-data');
-                            const headers = new Headers({'x-cache-time': Date.now().toString()});
-                            await cache.put(cacheReq, new Response(JSON.stringify(data), {headers}));
-                        } catch(e){}
-                        resolve(data);
-                    }, reject 
-                };
-                setTimeout(() => { if (window.pendingFetches[reqId]) { window.pendingFetches[reqId].reject(new Error('Timeout')); delete window.pendingFetches[reqId]; }}, 25000);
-                window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'PROXY_FETCH', url: url, reqId: reqId }));
-            } else { fetch(url).then(r => r.json()).then(resolve).catch(reject); }
-        });
+        const cache = await caches.open('amjad-data').catch(() => null);
+
+        const fetchAndStore = async () => {
+            const data = await performNetworkFetch(url);
+            if (cache) { try { await cache.put(cacheReq, new Response(JSON.stringify(data), { headers: new Headers({ 'x-cache-time': Date.now().toString() }) })); } catch(e) {} }
+            return data;
+        };
+
+        if (!forceRefresh && cache) {
+            try {
+                const cachedRes = await cache.match(cacheReq);
+                if (cachedRes) {
+                    const cachedTime = parseInt(cachedRes.headers.get('x-cache-time') || '0');
+                    const isStale = !isInfoRequest && (Date.now() - cachedTime >= STALE_AFTER_MS);
+                    const cachedData = await cachedRes.json();
+
+                    if (isStale) {
+                        // تحديث هادئ بالخلفية - لا يعطل ولا يؤخر العرض الحالي، ويحصل دائمًا حتى لو مافيه callback
+                        fetchAndStore().then(freshData => { if (onBackgroundUpdate) onBackgroundUpdate(freshData); }).catch(() => {});
+                    }
+                    return cachedData; // 🔥 عرض فوري من الكاش، بدون انتظار الشبكة
+                }
+            } catch(e) {}
+        }
+
+        return fetchAndStore();
     }
 
     async function forceRefreshCache() {
@@ -378,12 +391,49 @@
         } catch(e) {}
     }
 
+    // 🔥 يفحص هل قوائم المكتبة (أفلام/مسلسلات/قنوات) المخزنة محليًا أقدم من 24 ساعة
+    // (لا يعتبرها "قديمة" لو كانت غير موجودة أصلاً - تلك حالة أول تحميل وليست تحديثًا)
+    async function isLibraryDataStale() {
+        const cache = await caches.open('amjad-data').catch(() => null);
+        if (!cache) return false;
+        const actions = ['get_vod_categories', 'get_series_categories', 'get_live_categories'];
+        for (const action of actions) {
+            try {
+                const cachedRes = await cache.match(new Request(`https://amjad.cache/${action}_`));
+                if (cachedRes) {
+                    const cachedTime = parseInt(cachedRes.headers.get('x-cache-time') || '0');
+                    if (Date.now() - cachedTime >= STALE_AFTER_MS) return true;
+                }
+            } catch(e) {}
+        }
+        return false;
+    }
+
     async function selectProfile(name) {
         currentProfile = name; document.getElementById('current-profile-name').innerText = name; 
         document.getElementById('profiles-screen').classList.add('hidden'); document.getElementById('main-screen').classList.remove('hidden'); 
         // 🔥 تشغيل الاستعلامين المستقلين بالتوازي بدل التتابع لتقليل زمن الدخول
         await Promise.all([fetchAllUserActivity(), loadFavoritesMap()]);
+        if (await isLibraryDataStale()) {
+            showToast('جاري تحديث مكتبة الأفلام والمسلسلات والقنوات...');
+        }
         loadPage('movies');
+        prefetchOtherTabsInBackground();
+    }
+
+    // 🔥 تسخين الكاش لتبويبي المسلسلات والبث المباشر بالخلفية بعد استقرار تبويب الأفلام،
+    // فيصير التبديل بينهم فوريًا حتى في أول تشغيل للتطبيق (بدون أي تأخير محسوس للمستخدم الحالي)
+    function prefetchOtherTabsInBackground() {
+        setTimeout(async () => {
+            try {
+                const seriesCats = await apiFetch('get_series_categories');
+                if (seriesCats && seriesCats[0]) await apiFetch('get_series', `&category_id=${seriesCats[0].category_id}`);
+            } catch(e) {}
+            try {
+                const liveCats = await apiFetch('get_live_categories');
+                if (liveCats && liveCats[0]) await apiFetch('get_live_streams', `&category_id=${liveCats[0].category_id}`);
+            } catch(e) {}
+        }, 1500);
     }
 
     function openAddProfileModal() { 
@@ -484,31 +534,58 @@
         } catch(e) { return []; }
     }
 
-    async function fetchCategories(catAction, itemType) {
-        try {
-            const cats = await apiFetch(catAction);
-            let html = `<div class="categories-row">`;
-            cats.forEach((cat, index) => { html += `<button class="category-chip ${index === 0 ? 'active' : ''}" data-id="${cat.category_id}">${escapeHtml(cat.category_name)}</button>`; });
-            html += `</div>`;
-            document.getElementById('categories-container').innerHTML = html;
+    function renderCategoryChips(cats, itemType, keepActiveId = null) {
+        let html = `<div class="categories-row">`;
+        cats.forEach((cat, index) => {
+            const isActive = keepActiveId ? String(cat.category_id) === String(keepActiveId) : index === 0;
+            html += `<button class="category-chip ${isActive ? 'active' : ''}" data-id="${cat.category_id}">${escapeHtml(cat.category_name)}</button>`;
+        });
+        html += `</div>`;
+        document.getElementById('categories-container').innerHTML = html;
 
-            const chips = document.querySelectorAll('.category-chip');
-            chips.forEach(chip => {
-                chip.onclick = () => {
-                    chips.forEach(c => c.classList.remove('active')); chip.classList.add('active');
-                    loadCategoryItems(chip.getAttribute('data-id'), itemType === 'movie' ? 'get_vod_streams' : (itemType === 'series' ? 'get_series' : 'get_live_streams'), itemType);
-                };
+        const streamAction = itemType === 'movie' ? 'get_vod_streams' : (itemType === 'series' ? 'get_series' : 'get_live_streams');
+        const chips = document.querySelectorAll('.category-chip');
+        chips.forEach(chip => {
+            chip.onclick = () => {
+                chips.forEach(c => c.classList.remove('active')); chip.classList.add('active');
+                loadCategoryItems(chip.getAttribute('data-id'), streamAction, itemType);
+            };
+        });
+        return streamAction;
+    }
+
+    async function fetchCategories(catAction, itemType) {
+        const requestedTab = currentTab;
+        try {
+            const cats = await apiFetch(catAction, '', false, (freshCats) => {
+                // 🔥 تحديث هادئ لشريط التصنيفات بالخلفية - فقط لو المستخدم لسا بنفس التبويب ولو القائمة تغيرت فعليًا
+                if (currentTab !== requestedTab || !freshCats || freshCats.length === cats.length) return;
+                const activeChip = document.querySelector('.category-chip.active');
+                renderCategoryChips(freshCats, itemType, activeChip ? activeChip.getAttribute('data-id') : null);
             });
-            if(cats.length > 0) loadCategoryItems(cats[0].category_id, itemType === 'movie' ? 'get_vod_streams' : (itemType === 'series' ? 'get_series' : 'get_live_streams'), itemType);
+            if (!cats || cats.length === 0) return;
+            const streamAction = renderCategoryChips(cats, itemType);
+            loadCategoryItems(cats[0].category_id, streamAction, itemType);
         } catch (e) {}
     }
 
+    let activeCategoryRequestId = 0;
+
     async function loadCategoryItems(catId, streamAction, itemType) {
+        const myRequestId = ++activeCategoryRequestId;
         document.getElementById('grid-container').innerHTML = '<h3 style="grid-column: 1 / -1; text-align:center;">جاري التحميل...</h3>';
         document.getElementById('load-more-container').innerHTML = '';
         try {
             const extraParams = `&category_id=${catId}`;
-            currentCategoryItems = await apiFetch(streamAction, extraParams);
+            currentCategoryItems = await apiFetch(streamAction, extraParams, false, (freshItems) => {
+                // 🔥 لو المستخدم فتح تصنيف آخر أثناء انتظار التحديث بالخلفية، تجاهل النتيجة القديمة
+                if (myRequestId !== activeCategoryRequestId || !freshItems) return;
+                // فقط أعِد الرسم لو تغيّر عدد العناصر فعليًا (إضافة/حذف قنوات أو أفلام)، لتجنّب قطع تفاعل المستخدم بلا داعٍ
+                if (freshItems.length === currentCategoryItems.length) return;
+                currentCategoryItems = freshItems; displayedItemsCount = 0;
+                renderGridItems(itemType);
+            });
+            if (myRequestId !== activeCategoryRequestId) return; // المستخدم غيّر التصنيف قبل اكتمال الطلب
             displayedItemsCount = 0; document.getElementById('grid-container').innerHTML = '';
             if(currentCategoryItems.length > 0) renderGridItems(itemType);
             else document.getElementById('grid-container').innerHTML = '<h3 style="grid-column: 1 / -1; text-align:center;">التصنيف فارغ</h3>';
