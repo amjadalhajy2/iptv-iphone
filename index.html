@@ -34,7 +34,7 @@
 
         #main-content { padding-top: 2vh; padding-bottom: calc(env(safe-area-inset-bottom) + 10vh); width: 100vw; overflow-x: hidden; }
         .row-title { font-size: 5vw; font-weight: bold; margin: 0 4vw 1vh 4vw; }
-        .categories-row { display: flex; gap: 2vw; overflow-x: auto; padding: 1vh 4vw; }
+        .categories-row { display: flex; gap: 2vw; overflow-x: auto; padding: 1vh 4vw; -webkit-overflow-scrolling: touch; }
         .category-chip { background: rgba(255,255,255,0.1); color: white; padding: 1.5vh 4vw; border-radius: 30px; font-size: 3.5vw; font-weight: bold; white-space: nowrap; border: none; }
         .category-chip.active { background: var(--primary); }
         
@@ -42,17 +42,17 @@
         .grid-container.favorites-grid { grid-template-columns: repeat(3, 1fr); }
         .grid-container.live-grid { grid-template-columns: repeat(2, 1fr); gap: 4vw; } 
         
-        .row-inner { display: flex; gap: 3vw; overflow-x: auto; padding: 1vh 4vw; scroll-behavior: smooth; }
+        .row-inner { display: flex; gap: 3vw; overflow-x: auto; padding: 1vh 4vw; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
         
-        .card-container { perspective: 1000px; border-radius: 3vw; position: relative; width: 100%; aspect-ratio: 2 / 3; background: transparent; }
+        .card-container { perspective: 1000px; -webkit-perspective: 1000px; border-radius: 3vw; position: relative; width: 100%; aspect-ratio: 2 / 3; background: transparent; }
         .row-inner .card-container { width: 35vw; flex: 0 0 auto; }
-        .card { width: 100%; height: 100%; position: relative; transition: transform 0.6s; transform-style: preserve-3d; border-radius: 3vw; box-shadow: 0 4px 8px rgba(0,0,0,0.5); border: none; cursor: pointer; }
-        .card.flipped { transform: rotateY(180deg); }
-        .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 3vw; overflow: hidden; background: #1a1a1a; }
+        .card { width: 100%; height: 100%; position: relative; transition: transform 0.6s; -webkit-transition: -webkit-transform 0.6s; transform-style: preserve-3d; -webkit-transform-style: preserve-3d; border-radius: 3vw; box-shadow: 0 4px 8px rgba(0,0,0,0.5); border: none; cursor: pointer; will-change: transform; }
+        .card.flipped { transform: rotateY(180deg); -webkit-transform: rotateY(180deg); }
+        .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 3vw; overflow: hidden; background: #1a1a1a; }
         .card-front img { width: 100%; height: 100%; object-fit: cover; }
         
         /* 🔥 تصميم الصورة المنقلبة والشريط السفلي الجديد (Split Bar) */
-        .card-back { transform: rotateY(180deg); background: rgba(20,20,20,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; border: 1px solid var(--primary); }
+        .card-back { transform: rotateY(180deg); -webkit-transform: rotateY(180deg); background: rgba(20,20,20,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; border: 1px solid var(--primary); }
         .card-back-content { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding-bottom: 6.5vh; padding-top: 2vh; }
         .card-back-text { color: white; font-size: 3vw; line-height: 1.8; font-weight: bold; }
         
@@ -172,10 +172,10 @@
                 </div>
                 
                 <div class="nav-links">
-                    <button class="nav-item active" onclick="loadPage('movies')">أفلام</button>
-                    <button class="nav-item" onclick="loadPage('series')">مسلسلات</button>
-                    <button class="nav-item" onclick="loadPage('live')">بث مباشر</button>
-                    <button class="nav-item" onclick="loadPage('favorites')">مفضلاتي</button>
+                    <button class="nav-item active" onclick="loadPage('movies', event)">أفلام</button>
+                    <button class="nav-item" onclick="loadPage('series', event)">مسلسلات</button>
+                    <button class="nav-item" onclick="loadPage('live', event)">بث مباشر</button>
+                    <button class="nav-item" onclick="loadPage('favorites', event)">مفضلاتي</button>
                 </div>
                 <div class="search-box">
                     <svg class="svg-icon search-icon"><use href="#icon-search"></use></svg>
@@ -193,7 +193,7 @@
 
         <div id="details-screen" class="scrollable-screen hidden">
             <div class="details-layout">
-                <img id="detail-poster" class="details-poster" src="">
+                <img id="detail-poster" class="details-poster" src="" decoding="async">
                 <h1 id="detail-title" class="details-title">جاري التحميل...</h1>
                 
                 <div class="details-meta-box" id="detail-meta"></div>
@@ -227,6 +227,12 @@
     window.userActivityMap = {};
 
     function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 4000); }
+
+    // 🔥 حماية العناوين القادمة من السيرفر قبل إدخالها كـ HTML (تفادي كسر الواجهة أو حقن أكواد)
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
 
     document.addEventListener('click', () => {
         document.querySelectorAll('.profile-menu').forEach(m => m.classList.add('hidden'));
@@ -362,10 +368,21 @@
         } catch(e){}
     }
 
+    // 🔥 تحميل خريطة المفضلات مرة واحدة فقط بدل استعلام سيرفر منفصل عند كل قلب بطاقة أو فتح تفاصيل
+    // id (نصي) -> id الصف في supabase (مطلوب للحذف السريع بدون استعلام إضافي)
+    async function loadFavoritesMap() {
+        window.favoritesMap = new Map();
+        try {
+            const { data } = await supabaseClient.from('favorites').select('id, item_id').eq('username', iptv.user).eq('profile_name', currentProfile);
+            if (data) data.forEach(r => window.favoritesMap.set(String(r.item_id), r.id));
+        } catch(e) {}
+    }
+
     async function selectProfile(name) {
         currentProfile = name; document.getElementById('current-profile-name').innerText = name; 
         document.getElementById('profiles-screen').classList.add('hidden'); document.getElementById('main-screen').classList.remove('hidden'); 
-        await fetchAllUserActivity();
+        // 🔥 تشغيل الاستعلامين المستقلين بالتوازي بدل التتابع لتقليل زمن الدخول
+        await Promise.all([fetchAllUserActivity(), loadFavoritesMap()]);
         loadPage('movies');
     }
 
@@ -430,14 +447,16 @@
         }, 800);
     }
 
-    async function loadPage(type) {
+    async function loadPage(type, evt) {
         if(currentTab === type && document.getElementById('main-screen').scrollTop > 0) {
             document.getElementById('main-screen').scrollTo({top: 0, behavior: 'smooth'}); return;
         }
 
         currentTab = type; updateSearchPlaceholder(type);
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active')); if(event && event.target && event.target.tagName === 'BUTTON') event.target.classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active')); if(evt && evt.target && evt.target.tagName === 'BUTTON') evt.target.classList.add('active');
         document.getElementById('search-input').value = '';
+        // 🔥 تفريغ ذاكرة العناصر المؤقتة عند تبديل التبويب لتقليل استهلاك الذاكرة على المدى الطويل
+        window.allLoadedItems = {};
         
         const grid = document.getElementById('grid-container'); 
         grid.className = 'grid-container'; 
@@ -454,7 +473,9 @@
     async function loadSupabaseFavorites(returnRaw = false) {
         try {
             const { data } = await supabaseClient.from('favorites').select('*').eq('username', iptv.user).eq('profile_name', currentProfile);
+            window.favoritesMap = new Map();
             const items = data.map(r => {
+                window.favoritesMap.set(String(r.item_id), r.id);
                 let obj = typeof r.item_data === 'string' ? JSON.parse(r.item_data) : r.item_data;
                 obj.item_type = r.item_type; 
                 return obj;
@@ -467,7 +488,7 @@
         try {
             const cats = await apiFetch(catAction);
             let html = `<div class="categories-row">`;
-            cats.forEach((cat, index) => { html += `<button class="category-chip ${index === 0 ? 'active' : ''}" data-id="${cat.category_id}">${cat.category_name}</button>`; });
+            cats.forEach((cat, index) => { html += `<button class="category-chip ${index === 0 ? 'active' : ''}" data-id="${cat.category_id}">${escapeHtml(cat.category_name)}</button>`; });
             html += `</div>`;
             document.getElementById('categories-container').innerHTML = html;
 
@@ -498,14 +519,15 @@
         const itemId = String(item.stream_id || item.series_id || item.id);
         window.allLoadedItems[itemId] = item;
         
-        const title = item.name || item.title || 'بدون اسم';
+        const rawTitle = item.name || item.title || 'بدون اسم';
+        const title = escapeHtml(rawTitle);
         const imgUrl = item.stream_icon || item.cover || '';
-        const rating = item.rating ? `<svg class="svg-icon" style="width:3.5vw;height:3.5vw; color:var(--primary);"><use href="#icon-star"></use></svg> ${item.rating}` : '';
+        const rating = item.rating ? `<svg class="svg-icon" style="width:3.5vw;height:3.5vw; color:var(--primary);"><use href="#icon-star"></use></svg> ${escapeHtml(item.rating)}` : '';
         
         if (type === 'live') {
             return `
                 <div class="live-img-wrapper">
-                    <img src="${imgUrl}" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');">
+                    <img src="${imgUrl}" loading="lazy" decoding="async" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');">
                     <span class="live-fallback-text hidden">${title}</span>
                 </div>
                 <div class="live-title">${title}</div>
@@ -521,7 +543,7 @@
                     <div class="card-container" style="pointer-events: auto;" onclick="window.resumeItem('${itemId}', '${type}')">
                         <div class="resume-card-layout">
                             <div class="resume-img-area">
-                                <img src="${imgUrl}" onerror="this.style.display='none';">
+                                <img src="${imgUrl}" loading="lazy" decoding="async" onerror="this.style.display='none';">
                                 <div class="resume-play-center">
                                     <svg class="svg-icon"><use href="#icon-play"></use></svg>
                                 </div>
@@ -539,7 +561,8 @@
             return `
                 <div class="card" onclick="window.flipCard(this, '${itemId}', '${type}')">
                     <div class="card-front">
-                        <img src="${imgUrl}" onerror="this.style.display='none';">
+                        <img src="${imgUrl}" loading="lazy" decoding="async" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');">
+                        <span class="live-fallback-text hidden" style="top:50%; left:5%; transform:translateY(-50%);">${title}</span>
                         ${progPercent > 0 ? `<div class="progress-bar"><div class="progress-fill" style="width: ${progPercent}%"></div></div>` : ''}
                     </div>
                     <div class="card-back">
@@ -563,15 +586,18 @@
     window.toggleFavFromGrid = async (btnEl, id, type) => {
         let item = window.allLoadedItems[id];
         if (!item) return;
+        const idStr = String(id);
+        const icon = btnEl.querySelector('svg');
         try {
-            const { data } = await supabaseClient.from('favorites').select('id').eq('username', iptv.user).eq('profile_name', currentProfile).eq('item_id', String(id));
-            const icon = btnEl.querySelector('svg');
-            if (data && data.length > 0) { 
-                await supabaseClient.from('favorites').delete().eq('id', data[0].id); 
+            if (window.favoritesMap.has(idStr)) {
+                const rowId = window.favoritesMap.get(idStr);
+                window.favoritesMap.delete(idStr);
                 icon.style.color = 'white'; icon.style.fill = 'currentColor'; showToast('تمت الإزالة من المفضلة');
+                await supabaseClient.from('favorites').delete().eq('id', rowId);
             } else { 
-                await supabaseClient.from('favorites').insert([{ username: iptv.user, profile_name: currentProfile, item_id: String(id), item_type: type, item_data: item }]); 
                 icon.style.color = '#e50914'; icon.style.fill = '#e50914'; showToast('تم الإضافة إلى المفضلة');
+                const { data } = await supabaseClient.from('favorites').insert([{ username: iptv.user, profile_name: currentProfile, item_id: idStr, item_type: type, item_data: item }]).select('id').single();
+                if (data) window.favoritesMap.set(idStr, data.id);
             }
         } catch(e) {}
     };
@@ -583,10 +609,10 @@
             const metaDiv = el.querySelector('.dynamic-meta');
             metaDiv.innerHTML = "جاري التحميل...";
             
-            const { data: favData } = await supabaseClient.from('favorites').select('id').eq('username', iptv.user).eq('profile_name', currentProfile).eq('item_id', String(id));
+            // 🔥 قراءة حالة المفضلة فوراً من الذاكرة المحلية بدل انتظار السيرفر
+            const isFav = window.favoritesMap && window.favoritesMap.has(String(id));
             const favIcon = el.querySelector('.flip-fav-btn svg');
-            if (favData && favData.length > 0 && favIcon) { favIcon.style.color = '#e50914'; favIcon.style.fill = '#e50914'; }
-            else if (favIcon) { favIcon.style.color = 'white'; favIcon.style.fill = 'currentColor'; }
+            if (favIcon) { favIcon.style.color = isFav ? '#e50914' : 'white'; favIcon.style.fill = isFav ? '#e50914' : 'currentColor'; }
 
             let action = type === 'movie' ? `get_vod_info&vod_id=${id}` : `get_series_info&series_id=${id}`;
             apiFetch(action).then(data => {
@@ -661,15 +687,17 @@
         const container = document.getElementById('grid-container');
         if (!append) container.innerHTML = '';
         const nextBatch = currentCategoryItems.slice(displayedItemsCount, displayedItemsCount + ITEMS_PER_PAGE);
-        
+        const fragment = document.createDocumentFragment();
+
         nextBatch.forEach(item => {
             const wrapper = document.createElement('div');
             wrapper.className = type === 'live' ? 'live-card' : 'card-container';
             let actualType = type === 'mixed' ? (item.item_type || item.type || 'movie') : type;
             wrapper.innerHTML = createCardHtml(item, actualType);
             if(actualType === 'live') wrapper.onclick = () => playStream(item.stream_id || item.id, 'live', '');
-            container.appendChild(wrapper);
+            fragment.appendChild(wrapper);
         });
+        container.appendChild(fragment);
 
         displayedItemsCount += nextBatch.length;
         const loadMore = document.getElementById('load-more-container');
@@ -698,6 +726,7 @@
                 const wrapper = document.createElement('div');
                 wrapper.innerHTML = `<div class="row-title">${rowTitle}</div><div class="row-inner"></div>`;
                 const inner = wrapper.querySelector('.row-inner');
+                const fragment = document.createDocumentFragment();
 
                 data.forEach(row => {
                     let obj = typeof row.item_data === 'string' ? JSON.parse(row.item_data) : row.item_data;
@@ -708,8 +737,9 @@
                     
                     wrap.innerHTML = createCardHtml(obj, row.item_type, tableName === 'user_activity' ? row.resume_time : 0, true);
                     if(row.item_type === 'live') wrap.onclick = () => playStream(obj.stream_id || obj.id, 'live', '');
-                    inner.appendChild(wrap);
+                    fragment.appendChild(wrap);
                 });
+                inner.appendChild(fragment);
                 container.appendChild(wrapper);
             }
         } catch(e) {}
@@ -785,27 +815,29 @@
         } catch (e) {}
     }
 
-    async function checkIfFavorite() {
-        try {
-            const { data } = await supabaseClient.from('favorites').select('id').eq('username', iptv.user).eq('profile_name', currentProfile).eq('item_id', String(activeStreamData.id));
-            const favBtn = document.getElementById('fav-btn');
-            if (data && data.length > 0) { favBtn.innerHTML = '<svg class="svg-icon"><use href="#icon-close"></use></svg> إزالة من المفضلة'; favBtn.style.background = 'var(--primary)'; favBtn.style.color = 'white'; favBtn.style.border = 'none'; }
-        } catch(e) {}
+    function checkIfFavorite() {
+        const favBtn = document.getElementById('fav-btn');
+        if (!favBtn || !activeStreamData) return;
+        if (window.favoritesMap && window.favoritesMap.has(String(activeStreamData.id))) {
+            favBtn.innerHTML = '<svg class="svg-icon"><use href="#icon-close"></use></svg> إزالة من المفضلة'; favBtn.style.background = 'var(--primary)'; favBtn.style.color = 'white'; favBtn.style.border = 'none';
+        }
     }
 
     async function toggleFavorite() {
+        const favBtn = document.getElementById('fav-btn');
+        const idStr = String(activeStreamData.id);
         try {
-            const { data } = await supabaseClient.from('favorites').select('id').eq('username', iptv.user).eq('profile_name', currentProfile).eq('item_id', String(activeStreamData.id));
-            const favBtn = document.getElementById('fav-btn');
-            
-            if (data && data.length > 0) { 
-                await supabaseClient.from('favorites').delete().eq('id', data[0].id); 
+            if (window.favoritesMap.has(idStr)) {
+                const rowId = window.favoritesMap.get(idStr);
+                window.favoritesMap.delete(idStr);
                 favBtn.innerHTML = '<svg class="svg-icon"><use href="#icon-heart"></use></svg> أضف للمفضلة'; favBtn.style.background = 'transparent'; favBtn.style.border = '1px solid white'; 
                 showToast('تمت الإزالة من المفضلة');
+                await supabaseClient.from('favorites').delete().eq('id', rowId);
             } else { 
-                await supabaseClient.from('favorites').insert([{ username: iptv.user, profile_name: currentProfile, item_id: String(activeStreamData.id), item_type: activeStreamData.type, item_data: activeStreamData }]); 
                 favBtn.innerHTML = '<svg class="svg-icon"><use href="#icon-close"></use></svg> إزالة من المفضلة'; favBtn.style.background = 'var(--primary)'; favBtn.style.border = 'none'; 
                 showToast('تم الإضافة إلى المفضلة');
+                const { data } = await supabaseClient.from('favorites').insert([{ username: iptv.user, profile_name: currentProfile, item_id: idStr, item_type: activeStreamData.type, item_data: activeStreamData }]).select('id').single();
+                if (data) window.favoritesMap.set(idStr, data.id);
             }
         } catch(e) {}
     }
