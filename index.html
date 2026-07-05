@@ -19,14 +19,14 @@
         #toast.show { visibility: visible; opacity: 1; }
 
         /* الترويسة العلوية الشفافة الذكية */
-        header { width: 100vw; padding: calc(env(safe-area-inset-top) + 2vh) 4vw 2vh 4vw; background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0) 100%); display: flex; flex-direction: column; gap: 2vh; z-index: 100; position: absolute; top: 0; }
-        .top-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; direction: ltr; }
+        header { width: 100vw; padding: calc(env(safe-area-inset-top) + 2vh) 4vw 2vh 4vw; background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0) 100%); display: flex; flex-direction: column; gap: 2vh; z-index: 100; position: absolute; top: 0; pointer-events: none; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; direction: ltr; pointer-events: auto; }
         .logo { font-size: 6.5vw; font-weight: 900; color: var(--primary); letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.6); }
         .user-section { display: flex; align-items: center; gap: 3vw; }
         .refresh-btn { background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: white; border: none; border-radius: 50%; width: 10vw; height: 10vw; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1); }
         .user-badge { display: flex; align-items: center; gap: 2vw; background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 1vh 3.5vw; border-radius: 20px; font-size: 3.5vw; font-weight: 600; color: white; border: 1px solid rgba(255,255,255,0.1); }
         
-        .search-box { width: 100%; margin-top: 1vh; direction: rtl; position: relative; z-index: 101;}
+        .search-box { width: 100%; margin-top: 1vh; direction: rtl; position: relative; z-index: 101; pointer-events: auto; }
         .search-box input { width: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 1.5vh 4vw; padding-right: 10vw; border-radius: 30px; font-size: 4vw; outline: none; transition: border-color 0.3s; }
         .search-box input:focus { border-color: var(--primary); }
         .search-icon { position: absolute; right: 3vw; top: 50%; transform: translateY(-50%); color: #aaa; }
@@ -42,7 +42,7 @@
         .hero-play { background: #ffffff; color: #000000; }
         .hero-info { background: rgba(109, 109, 110, 0.45); color: #ffffff; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
 
-        #main-content { width: 100vw; overflow-x: hidden; position: relative; z-index: 10; margin-top: 0; }
+        #main-content { width: 100vw; overflow-x: hidden; position: relative; z-index: 10; margin-top: 0; transition: padding-top 0.3s ease; }
         .row-title { font-size: 4.8vw; font-weight: bold; margin: 3vh 4vw 1vh 4vw; text-shadow: 0 1px 2px rgba(0,0,0,0.5); letter-spacing: 0.5px; }
         .categories-row { display: flex; gap: 2vw; overflow-x: auto; padding: 1vh 4vw; margin-bottom: 1vh; -webkit-overflow-scrolling: touch; }
         .category-chip { background: rgba(255,255,255,0.1); color: #e0e0e0; padding: 1.2vh 5vw; border-radius: 30px; font-size: 3.5vw; font-weight: bold; white-space: nowrap; border: 1px solid rgba(255,255,255,0.05); transition: all 0.2s; }
@@ -160,6 +160,7 @@
 
         <div id="toast">إشعار</div>
 
+        <!-- شاشة تسجيل الدخول -->
         <div id="login-screen" class="scrollable-screen">
             <div class="login-wrapper">
                 <h1 style="color:var(--primary); font-size:9vw; margin:0 0 2vh 0; font-weight:900; letter-spacing:1px;">Amjad Stream</h1>
@@ -171,6 +172,7 @@
             </div>
         </div>
 
+        <!-- شاشة تحديد وإدارة المستخدمين -->
         <div id="profiles-screen" class="scrollable-screen hidden">
             <h1 class="profiles-header">من يشاهد الآن؟</h1>
             <div class="profiles-container" id="profiles-list"></div>
@@ -180,6 +182,7 @@
             </div>
         </div>
 
+        <!-- مودال إضافة وتعديل الملفات الشخصية -->
         <div id="add-modal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.92); z-index: 10000; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);">
             <div style="background: #1a1a1c; padding: 6vw; border-radius: 4vw; text-align: center; width: 88vw; border: 1px solid rgba(255,255,255,0.1);">
                 <h2 id="modal-title" style="color:white; font-size: 5vw; margin: 0;">اسم المستخدم الجديد</h2>
@@ -189,6 +192,7 @@
             </div>
         </div>
 
+        <!-- الشاشة الرئيسية للتطبيق -->
         <div id="main-screen" class="scrollable-screen hidden">
             <header>
                 <div class="top-bar">
@@ -207,6 +211,7 @@
             </header>
 
             <div id="main-content">
+                <!-- قسم البانر المميز (Hero Banner) -->
                 <div id="hero-banner" class="hero-banner">
                     <img id="hero-img" src="" alt="Featured Banner" decoding="async">
                     <div class="hero-gradient"></div>
@@ -223,6 +228,7 @@
             </div>
         </div>
 
+        <!-- شريط التنقل السفلي الاحترافي (Bottom Navigation Bar) -->
         <nav class="bottom-nav hidden" id="app-bottom-nav">
             <button class="nav-link-btn active" id="nav-movies" onclick="loadPage('movies', event)">
                 <svg><use href="#icon-movie"></use></svg>
@@ -242,6 +248,7 @@
             </button>
         </nav>
 
+        <!-- شاشة التفاصيل الغامرة والحديثة -->
         <div id="details-screen" class="scrollable-screen hidden">
             <div class="details-backdrop-area">
                 <img id="detail-backdrop" class="details-backdrop-img" src="" decoding="async">
@@ -532,7 +539,11 @@
         searchTimeout = setTimeout(async () => {
             const query = document.getElementById('search-input').value.toLowerCase().trim();
             if (query === '') { loadPage(currentTab); return; }
+            
             document.getElementById('hero-banner').style.display = 'none';
+            // 🔥 إضافة مسافة علوية عند البحث لضمان عدم اختفاء النتائج تحت الترويسة
+            document.getElementById('main-content').style.paddingTop = 'calc(env(safe-area-inset-top) + 14vh)';
+
             document.getElementById('continue-watching-container').innerHTML = ''; 
             document.getElementById('categories-container').innerHTML = ''; 
             document.getElementById('load-more-container').innerHTML = '';
@@ -568,6 +579,15 @@
         else if (type === 'favorites') grid.classList.add('favorites-grid');
         
         document.getElementById('hero-banner').style.display = 'none';
+
+        // 🔥 التحكم بالمسافة العلوية (Padding) للصفحات التي لا تحتوي على Hero Section
+        const mainContent = document.getElementById('main-content');
+        if (type === 'live' || type === 'favorites') {
+            mainContent.style.paddingTop = 'calc(env(safe-area-inset-top) + 14vh)';
+        } else {
+            mainContent.style.paddingTop = '0';
+        }
+
         document.getElementById('continue-watching-container').innerHTML = ''; 
         document.getElementById('categories-container').innerHTML = '<div class="categories-row"><div class="category-chip shimmer-box" style="width:25vw; height:5vh; border-radius:30px;"></div><div class="category-chip shimmer-box" style="width:25vw; height:5vh; border-radius:30px;"></div><div class="category-chip shimmer-box" style="width:25vw; height:5vh; border-radius:30px;"></div></div>'; 
         grid.innerHTML = ''; 
@@ -678,8 +698,9 @@
         } catch(e) {}
     }
 
+    // 🔥 اختيار عشوائي للفيلم/المسلسل في مساحة البانر (Hero Section)
     function updateHeroSection(items, type) {
-        if (!items || items.length === 0 || currentTab === 'favorites') {
+        if (!items || items.length === 0 || currentTab === 'favorites' || currentTab === 'live') {
             document.getElementById('hero-banner').style.display = 'none';
             return;
         }
@@ -688,7 +709,9 @@
         const heroTitle = document.getElementById('hero-title');
         const heroActions = document.getElementById('hero-actions');
         
-        const heroItem = items[0];
+        // اختيار عشوائي من بين أول 15 عمل لتنويع الواجهة في كل مرة
+        const randomIndex = Math.floor(Math.random() * Math.min(items.length, 15));
+        const heroItem = items[randomIndex];
         const itemId = String(heroItem.stream_id || heroItem.series_id || heroItem.id);
         window.allLoadedItems[itemId] = heroItem;
 
