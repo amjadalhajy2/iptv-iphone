@@ -18,7 +18,6 @@
         #toast { visibility: hidden; width: 90vw; background-color: rgba(229, 9, 20, 0.95); color: #fff; text-align: center; border-radius: 2vw; padding: 3vw; position: fixed; z-index: 10000; left: 5vw; bottom: 12vh; font-size: 4vw; font-weight: bold; transition: opacity 0.4s; opacity: 0; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
         #toast.show { visibility: visible; opacity: 1; }
 
-        /* الترويسة الذكية الجديدة لحل مشكلة تداخل الكائنات */
         header { width: 100vw; padding: calc(env(safe-area-inset-top) + 2vh) 4vw 2vh 4vw; z-index: 100; transition: background 0.3s ease; }
         .header-absolute { position: absolute; top: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0) 100%); }
         .header-sticky { position: sticky; top: 0; background: rgba(15,15,15,0.98); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.08); }
@@ -34,7 +33,6 @@
         .search-box input:focus { border-color: var(--primary); }
         .search-icon { position: absolute; right: 3vw; top: 50%; transform: translateY(-50%); color: #aaa; }
 
-        /* البانر الرئيسي */
         .hero-banner { position: relative; width: 100vw; height: 55vh; display: none; overflow: hidden; }
         .hero-banner img { width: 100%; height: 100%; object-fit: cover; }
         .hero-gradient { position: absolute; bottom: 0; width: 100%; height: 70%; background: linear-gradient(to top, var(--bg) 0%, rgba(0,0,0,0.5) 50%, transparent 100%); }
@@ -72,14 +70,16 @@
         .flip-footer-right { border-left: 1px solid rgba(255,255,255,0.1); }
         .flip-fav-btn.active svg { color: var(--primary); fill: var(--primary); }
 
-        .resume-card-layout { position: relative; width: 50vw; aspect-ratio: 16 / 9; flex: 0 0 auto; background: var(--surface); border-radius: 2vw; overflow: hidden; }
-        .resume-img-area { width: 100%; height: 100%; position: relative; background: #000; }
+        /* تعديلات شريط الاستئناف الأنيق وزر التعجب (الشفاف والمدمج) */
+        .resume-card-layout { position: relative; width: 45vw; aspect-ratio: 16 / 9; flex: 0 0 auto; background: var(--surface); border-radius: 2vw; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.4); }
+        .resume-img-area { position: relative; width: 100%; height: 100%; background: #000; cursor: pointer; }
         .resume-img-area img { width: 100%; height: 100%; object-fit: cover; opacity: 0.75; } 
-        .resume-play-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.5); width: 11vw; height: 11vw; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 2px solid white; z-index: 10; }
-        .resume-play-center svg { width: 5.5vw; height: 5.5vw; margin-left: 0.6vw; color: white; }
+        .resume-play-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.5); width: 11vw; height: 11vw; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 2px solid white; z-index: 10; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+        .resume-play-center svg { width: 5.5vw; height: 5.5vw; margin-left: 0.6vw; }
         .resume-progress-bar { position: absolute; bottom: 0; left: 0; width: 100%; height: 0.8vh; background: rgba(255,255,255,0.25); z-index: 12; }
         .resume-progress-fill { height: 100%; background: var(--primary); transition: width 0.3s ease; }
         .resume-title-overlay { position: absolute; bottom: 1.2vh; right: 3vw; left: 3vw; font-size: 3vw; font-weight: bold; text-shadow: 0 1px 4px rgba(0,0,0,1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; direction: rtl; z-index: 11; color: #fff; }
+        .resume-info-trigger { position: absolute; top: 1.5vh; left: 2.5vw; background: rgba(0,0,0,0.6); width: 6.5vw; height: 6.5vw; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-size: 3.5vw; font-weight: bold; border: 1px solid rgba(255,255,255,0.3); z-index: 15; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); cursor: pointer; }
 
         .live-card { width: 100%; text-align: center; background: none; border: none; }
         .row-inner .live-card { width: 44vw; flex: 0 0 auto; } 
@@ -99,14 +99,12 @@
         .nav-link-btn.active { color: #ffffff; }
         .nav-link-btn.active svg { transform: scale(1.12); color: var(--primary); }
 
-        /* شاشة التحميل (Sync Screen) */
         .sync-screen-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--bg); z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 3vh; }
         .sync-spinner { width: 12vw; height: 12vw; border: 1vw solid rgba(255,255,255,0.1); border-top: 1vw solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .sync-text { color: white; font-size: 4.5vw; font-weight: bold; }
         .sync-subtext { color: #aaa; font-size: 3.5vw; text-align: center; padding: 0 10vw; line-height: 1.5;}
 
-        /* تنسيقات تسجيل الدخول والملفات الشخصية */
         .login-wrapper { background: rgba(20, 20, 20, 0.92); padding: 8vw 6vw; border-radius: 4vw; text-align: center; width: 90vw; margin: 18vh auto; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .login-wrapper input { width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: white; padding: 4vw; border-radius: 2.5vw; font-size: 4vw; margin-bottom: 2vh; text-align: center; outline: none; }
         .login-wrapper input:focus { border-color: var(--primary); }
@@ -115,10 +113,14 @@
         .profiles-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 6vw; padding: 0 5vw; }
         .profile-card { position: relative; width: 36vw; aspect-ratio: 1; background: linear-gradient(145deg, #1c1c1e, #111112); border-radius: 4vw; color: white; border: 1px solid rgba(255,255,255,0.06); cursor: pointer; box-shadow: 0 6px 15px rgba(0,0,0,0.4); }
         
+        .profile-options-btn { position: absolute; top: 1.5vh; left: 2.5vw; font-size: 5vw; color: #aaa; width: 7vw; height: 7vw; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.5); border-radius: 50%; z-index: 10; font-weight: bold; }
+        .profile-menu { position: absolute; top: 7.5vh; left: 2.5vw; background: #222224; border-radius: 2vw; overflow: hidden; z-index: 20; box-shadow: 0 4px 15px rgba(0,0,0,0.6); min-width: 28vw; border: 1px solid #3a3a3c; }
+        .profile-menu div { padding: 1.6vh 4vw; font-size: 3.8vw; color: white; border-bottom: 1px solid #2c2c2e; text-align: center; }
+        .profile-menu div:last-child { border-bottom: none; color: var(--primary); }
+        
         .action-btn { display: flex; justify-content: center; align-items: center; gap: 2vw; background: white; color: black; border: none; padding: 1.8vh; font-size: 4.2vw; font-weight: bold; border-radius: 1.5vw; width: 100%; margin-bottom: 1.5vh; }
         .action-btn.outline { background: rgba(45,45,45,0.7); color: white; border: 1px solid rgba(255,255,255,0.15); }
 
-        /* شاشة التفاصيل */
         .details-backdrop-area { position: relative; width: 100vw; height: 48vh; overflow: hidden; background: #000; }
         .details-backdrop-img { width: 100%; height: 100%; object-fit: cover; opacity: 0.45; filter: blur(2px); }
         .details-backdrop-gradient { position: absolute; bottom: 0; left: 0; width: 100%; height: 85%; background: linear-gradient(to top, var(--bg) 0%, rgba(0,0,0,0.4) 60%, transparent 100%); }
@@ -264,14 +266,12 @@
     window.userActivityMap = {};
     window.favoritesMap = new Map();
 
-    // 🚀 الكاش الشامل بذاكرة RAM لسرعة البرق
     window.XtreamData = {
         vod_cats: [], vod_streams: [],
         series_cats: [], series: [],
         live_cats: [], live_streams: []
     };
 
-    // 🚀 مساعد IndexedDB لتخزين البيانات المحلية 
     const LocalDB = {
         db: null,
         init() {
@@ -310,13 +310,12 @@
             if (window.ReactNativeWebView) {
                 const reqId = Math.random().toString(36).substring(7);
                 window.pendingFetches[reqId] = { resolve, reject };
-                setTimeout(() => { if (window.pendingFetches[reqId]) { window.pendingFetches[reqId].reject(new Error('Timeout')); delete window.pendingFetches[reqId]; }}, 60000); // 60s للتحميل الشامل
+                setTimeout(() => { if (window.pendingFetches[reqId]) { window.pendingFetches[reqId].reject(new Error('Timeout')); delete window.pendingFetches[reqId]; }}, 60000);
                 window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'PROXY_FETCH', url: url, reqId: reqId }));
             } else { fetch(url).then(r => r.json()).then(resolve).catch(reject); }
         });
     }
 
-    // تستخدم فقط لجلب تفاصيل الـ INFO عند قلب البطاقة أو فتح التفاصيل
     async function fetchInfoApi(action, extraParams = '') {
         let domain = iptv.domain; if (domain.endsWith('/')) domain = domain.slice(0, -1); if (!domain.startsWith('http')) domain = 'http://' + domain;
         const cacheReq = new Request(`https://amjad.cache/${action}_${extraParams}`);
@@ -330,7 +329,6 @@
         return data;
     }
 
-    // الجلب الأساسي للمزامنة
     async function fetchXtreamRaw(action) {
         let domain = iptv.domain; if (domain.endsWith('/')) domain = domain.slice(0, -1); if (!domain.startsWith('http')) domain = 'http://' + domain;
         let url = `${domain}/player_api.php?username=${encodeURIComponent(iptv.user)}&password=${encodeURIComponent(iptv.pass)}`;
@@ -338,7 +336,6 @@
         return performNetworkFetch(url);
     }
 
-    // 🚀 محرك المزامنة الذكي والشامل (يحفظ بـ IndexedDB)
     async function syncLibrary(force = false) {
         const lastSync = localStorage.getItem('last_sync_time');
         const now = Date.now();
@@ -497,7 +494,6 @@
         document.getElementById('search-input').placeholder = p;
     }
 
-    // 🚀 بحث فوري (يقرأ من الـ RAM)
     function handleSearch() {
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(async () => {
@@ -521,7 +517,6 @@
         }, 300);
     }
 
-    // 🚀 تنقل فوري بين الأقسام
     async function loadPage(type) {
         if(currentTab === type && document.getElementById('main-screen').scrollTop > 0 && document.getElementById('search-input').value === '') { document.getElementById('main-screen').scrollTo({top: 0, behavior: 'smooth'}); return; }
         currentTab = type; updateSearchPlaceholder(type);
@@ -531,7 +526,6 @@
         const grid = document.getElementById('grid-container'); grid.className = 'grid-container'; 
         if (type === 'live') grid.classList.add('live-grid'); else if (type === 'favorites') grid.classList.add('favorites-grid');
         
-        // ضبط الترويسة
         if(type === 'live' || type === 'favorites') { setHeaderStyle(true); document.getElementById('hero-banner').style.display = 'none'; } 
         else { setHeaderStyle(false); }
 
@@ -583,7 +577,6 @@
         }
     }
 
-    // 🔥 اختيار عشوائي للفيلم في الهيرو
     function updateHeroSection(items, type) {
         if (!items || items.length === 0 || currentTab === 'favorites' || currentTab === 'live' || document.getElementById('search-input').value !== '') {
             document.getElementById('hero-banner').style.display = 'none'; return;
@@ -632,7 +625,19 @@
             let actualResumeTime = resumeTime > 0 ? resumeTime : (window.userActivityMap[itemId] ? window.userActivityMap[itemId].resume_time : 0);
             let progPercent = actualResumeTime > 0 ? Math.min((actualResumeTime / (type === 'series' ? 3000 : 7200)) * 100, 100) : 0;
 
-            if (isResumeRow) return `<div class="resume-card-layout" onclick="window.resumeItem('${itemId}', '${type}')"><div class="resume-img-area"><img src="${imgUrl}" loading="lazy" decoding="async" onerror="this.src='';"><div class="resume-play-center"><svg><use href="#icon-play"></use></svg></div><div class="resume-title-overlay">${title}</div></div>${progPercent > 0 ? `<div class="resume-progress-bar"><div class="resume-progress-fill" style="width: ${progPercent}%"></div></div>` : ''}</div>`;
+            if (isResumeRow) {
+                return `
+                    <div class="resume-card-layout">
+                        <div class="resume-img-area" onclick="window.resumeItem('${itemId}', '${type}')">
+                            <img src="${imgUrl}" loading="lazy" decoding="async" onerror="this.src='';">
+                            <div class="resume-play-center"><svg class="svg-icon" style="fill: #ffffff;"><use href="#icon-play"></use></svg></div>
+                            <div class="resume-title-overlay">${title}</div>
+                            <div class="resume-info-trigger" onclick="event.stopPropagation(); window.openItemDetails('${itemId}', '${type}');">!</div>
+                            ${progPercent > 0 ? `<div class="resume-progress-bar"><div class="resume-progress-fill" style="width: ${progPercent}%"></div></div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
 
             return `<div class="card" onclick="window.flipCard(this, '${itemId}', '${type}')"><div class="card-front"><img src="${imgUrl}" loading="lazy" decoding="async" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');"><span class="live-fallback-text hidden" style="top:50%; left:5%; transform:translateY(-50%);">${title}</span>${progPercent > 0 ? `<div class="progress-bar"><div class="progress-fill" style="width: ${progPercent}%"></div></div>` : ''}</div><div class="card-back"><div class="card-back-content"><div class="card-back-text">${title}</div><div class="card-back-text" style="margin-top:1vh; color: #ffb703;">${rating}</div><div class="card-back-text dynamic-meta" style="margin-top:1vh; opacity:0.6; font-size:2.8vw;">جاري تحميل البيانات...</div></div><div class="flip-footer-bar"><div class="flip-footer-btn flip-footer-right" onclick="event.stopPropagation(); window.openItemDetails('${itemId}', '${type}')">!</div><div class="flip-footer-btn flip-footer-left flip-fav-btn" onclick="event.stopPropagation(); window.toggleFavFromGrid(this, '${itemId}', '${type}')"><svg class="svg-icon"><use href="#icon-heart"></use></svg></div></div></div></div>`;
         }
